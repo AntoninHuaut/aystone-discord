@@ -15,4 +15,4 @@ out/
 .kotlin
 
 ### CUSTOM
-.env
+config.yaml

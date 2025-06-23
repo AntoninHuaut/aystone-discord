@@ -17,6 +17,16 @@ dependencies {
         exclude(module = "tink") // required for encrypting and decrypting audio
     }
     implementation("io.github.cdimascio:dotenv-kotlin:6.5.1")
+    implementation("org.yaml:snakeyaml:2.4")
+    implementation("org.slf4j:slf4j-simple:2.0.17")
+
+    // Database
+    implementation("org.postgresql:postgresql:42.7.7")
+    implementation("org.jetbrains.exposed:exposed-core:0.61.0")
+    implementation("org.jetbrains.exposed:exposed-dao:0.61.0")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.61.0")
+    implementation("org.jetbrains.exposed:exposed-java-time:0.61.0")
+    implementation("com.zaxxer:HikariCP:6.3.0")
 }
 
 application {
