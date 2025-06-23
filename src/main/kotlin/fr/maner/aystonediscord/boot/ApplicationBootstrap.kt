@@ -1,7 +1,5 @@
 package fr.maner.aystonediscord.boot
 
-import fr.maner.aystonediscord.infrastructure.database.DatabaseConnection
-
 class ApplicationBootstrap {
 
     fun start(): Result<Unit> {
@@ -11,16 +9,14 @@ class ApplicationBootstrap {
             val dbConnection = DatabaseConnection(config.database)
             dbConnection.connect()
 
-            val discordClient = DiscordClient(config.bot.token)
-            val jda = discordClient.buildBot(config.bot.activity)
+            val discordClient = DiscordClient(config.bot)
+            discordClient.connect()
 
             Runtime.getRuntime().addShutdownHook(Thread {
                 println("Shutting down...")
-                jda.shutdown()
+                discordClient.close()
                 dbConnection.close()
             })
-
-            println("Application started successfully!")
         }
     }
 }

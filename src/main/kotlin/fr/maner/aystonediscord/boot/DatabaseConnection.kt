@@ -1,4 +1,4 @@
-package fr.maner.aystonediscord.infrastructure.database
+package fr.maner.aystonediscord.boot
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
