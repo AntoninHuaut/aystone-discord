@@ -1,0 +1,11 @@
+bot:
+  token: ""
+  activity: "👀 Checking users"
+
+database:
+  host: ""
+  port: ""
+  name: ""
+  schema: ""
+  username: ""
+  password: ""
