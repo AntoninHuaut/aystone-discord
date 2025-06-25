@@ -7,17 +7,16 @@ import net.dv8tion.jda.api.entities.Activity
 
 class DiscordClient(private var botConfig: BotConfig) {
 
-    private lateinit var jdaInstance: JDA
+    private var jdaInstance: JDA = JDABuilder.createDefault(botConfig.token)
+        .setActivity(Activity.playing(botConfig.activity))
+        .build()
 
-    fun connect() {
-        jdaInstance = JDABuilder.createDefault(botConfig.token)
-            .setActivity(Activity.playing(botConfig.activity))
-            .build()
+    init {
         jdaInstance.awaitReady()
     }
 
     fun close() {
-        if (::jdaInstance.isInitialized && jdaInstance.status != JDA.Status.SHUTDOWN) {
+        if (jdaInstance.status != JDA.Status.SHUTDOWN) {
             jdaInstance.shutdown()
             jdaInstance.awaitShutdown()
         }

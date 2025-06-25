@@ -12,9 +12,9 @@ import org.jetbrains.exposed.sql.transactions.transaction
 class DatabaseConnection(
     private val dbConfig: DatabaseConfig
 ) {
-    private lateinit var dataSource: HikariDataSource
+    private var dataSource: HikariDataSource
 
-    fun connect() {
+    init {
         val jdbcUrl = "jdbc:postgresql://${dbConfig.host}:${dbConfig.port}/${dbConfig.name}"
         val hikariConfig = HikariConfig().apply {
             this.jdbcUrl = jdbcUrl
@@ -38,9 +38,7 @@ class DatabaseConnection(
     }
 
     fun close() {
-        if (::dataSource.isInitialized) {
-            dataSource.close()
-            println("Database connection closed")
-        }
+        dataSource.close()
+        println("Database connection closed")
     }
 }

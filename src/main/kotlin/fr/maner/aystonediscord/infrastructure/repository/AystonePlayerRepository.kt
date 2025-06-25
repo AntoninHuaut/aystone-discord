@@ -1,6 +1,5 @@
 package fr.maner.aystonediscord.infrastructure.repository
 
-import fr.maner.aystonediscord.domain.model.AystoneInstanceEntity
 import fr.maner.aystonediscord.domain.model.AystonePlayer
 import fr.maner.aystonediscord.domain.model.AystonePlayerEntity
 import fr.maner.aystonediscord.domain.model.AystonePlayersTable
@@ -18,12 +17,7 @@ class AystonePlayerRepository {
     }
 
     fun getByInstance(instanceName: String): List<AystonePlayer> = transaction {
-        val instance = AystoneInstanceEntity.findById(instanceName)
-        if (instance != null) {
-            AystonePlayerEntity.find { AystonePlayersTable.instance eq instance.id }
-                .map { AystonePlayer.fromEntity(it) }
-        } else {
-            emptyList()
-        }
+        AystonePlayerEntity.find { AystonePlayersTable.instance eq instanceName }
+            .map { AystonePlayer.fromEntity(it) }
     }
 }
