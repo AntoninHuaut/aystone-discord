@@ -8,18 +8,19 @@ import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.javatime.datetime
 import java.time.LocalDateTime
+import java.util.*
 
-object AystonePlayersTable : IdTable<String>("aystone_players") {
-    override val id: Column<EntityID<String>> = varchar("uuid", 255).entityId()
+object AystonePlayersTable : IdTable<UUID>("aystone_players") {
+    override val id: Column<EntityID<UUID>> = uuid("uuid").entityId()
     val instance = reference(
         "instance",
         AystoneInstancesTable,
         onDelete = ReferenceOption.SET_NULL,
         onUpdate = ReferenceOption.CASCADE
     ).nullable()
-    val isWhitelist = bool("is_whitelist").default(false)
-    val isBan = bool("is_ban").default(false)
-    val lastConnection = datetime("last_connection").nullable()
+    val whitelist = bool("whitelist").default(false)
+    val ban = bool("ban").default(false)
+    val lastLogin = datetime("last_login").nullable()
 
     override val primaryKey = PrimaryKey(id)
 
@@ -28,31 +29,31 @@ object AystonePlayersTable : IdTable<String>("aystone_players") {
     }
 }
 
-class AystonePlayerEntity(id: EntityID<String>) : Entity<String>(id) {
-    companion object : EntityClass<String, AystonePlayerEntity>(AystonePlayersTable)
+class AystonePlayerEntity(id: EntityID<UUID>) : Entity<UUID>(id) {
+    companion object : EntityClass<UUID, AystonePlayerEntity>(AystonePlayersTable)
 
     var uuid by AystonePlayersTable.id
     var instance by AystoneInstanceEntity optionalReferencedOn AystonePlayersTable.instance
-    var isWhitelist by AystonePlayersTable.isWhitelist
-    var isBan by AystonePlayersTable.isBan
-    var lastConnection by AystonePlayersTable.lastConnection
+    var whitelist by AystonePlayersTable.whitelist
+    var ban by AystonePlayersTable.ban
+    var lastLogin by AystonePlayersTable.lastLogin
 }
 
 data class AystonePlayer(
-    val uuid: String,
+    val uuid: UUID,
     val instanceName: String?,
-    val isWhitelist: Boolean = false,
-    val isBan: Boolean = false,
-    val lastConnection: LocalDateTime? = null
+    val whitelist: Boolean = false,
+    val ban: Boolean = false,
+    val lastLogin: LocalDateTime? = null
 ) {
     companion object {
         fun fromEntity(entity: AystonePlayerEntity): AystonePlayer {
             return AystonePlayer(
                 uuid = entity.uuid.value,
                 instanceName = entity.instance?.name?.value,
-                isWhitelist = entity.isWhitelist,
-                isBan = entity.isBan,
-                lastConnection = entity.lastConnection,
+                whitelist = entity.whitelist,
+                ban = entity.ban,
+                lastLogin = entity.lastLogin,
             )
         }
     }

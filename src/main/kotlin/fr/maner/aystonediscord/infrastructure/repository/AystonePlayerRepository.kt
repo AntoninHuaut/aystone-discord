@@ -5,6 +5,7 @@ import fr.maner.aystonediscord.domain.model.AystonePlayer
 import fr.maner.aystonediscord.domain.model.AystonePlayerEntity
 import fr.maner.aystonediscord.domain.model.AystonePlayersTable
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.util.*
 
 class AystonePlayerRepository {
 
@@ -12,7 +13,7 @@ class AystonePlayerRepository {
         AystonePlayerEntity.all().map { AystonePlayer.fromEntity(it) }
     }
 
-    fun getByUuid(uuid: String): AystonePlayer? = transaction {
+    fun getByUuid(uuid: UUID): AystonePlayer? = transaction {
         AystonePlayerEntity.findById(uuid)?.let { AystonePlayer.fromEntity(it) }
     }
 
