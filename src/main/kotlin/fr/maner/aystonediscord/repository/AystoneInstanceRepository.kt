@@ -1,4 +1,4 @@
-package fr.maner.aystonediscord.infrastructure.repository
+package fr.maner.aystonediscord.repository
 
 import fr.maner.aystonediscord.domain.model.AystoneInstance
 import fr.maner.aystonediscord.domain.model.AystoneInstanceEntity
