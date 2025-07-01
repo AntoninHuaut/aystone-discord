@@ -176,26 +176,19 @@ class DiscordWhoisCommand(
             .setThumbnail("$MINOTAR_URL/${aPlayer.uuid}.png")
             .setTimestamp(Instant.now())
             .setTitle("👤 Player Info")
+            
             .addField("UUID", aPlayer.uuid.toString(), false)
+
             .addField("Whitelist", if (aPlayer.whitelist) "✅ Yes" else "❌ No", true)
             .addField("Banned", if (aPlayer.ban) "🚫 Yes" else "🟢 No", true)
             .addField("Instance", aPlayer.instanceName ?: "None", true)
+
             .addField("Created On", aPlayer.createdOn.format(formatter), true)
             .addField("Last Login", aPlayer.lastLogin.format(formatter), true)
-
             .addField("\u200B", "\u200B", true)
 
-            .addField(
-                "Twitch",
-                "TBD Twitch Name (`${kPlayer.twitchId}`)",
-                true
-            )
-
-            .addField(
-                "Discord",
-                "TBD Discord Name (`${kPlayer.discordId}`)",
-                true
-            )
+            .addField("Twitch", "TBD Twitch Name (`${kPlayer.twitchId}`)", true)
+            .addField("Discord", "TBD Discord Name (`${kPlayer.discordId}`)", true)
 
         return embed.build()
     }
