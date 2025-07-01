@@ -2,7 +2,7 @@ package fr.maner.aystonediscord.domain
 
 data class AppConfig(
     var bot: BotConfig = BotConfig(""),
-    var database: DatabaseConfig = DatabaseConfig("")
+    var database: DatabaseConfig = DatabaseConfig(""),
 )
 
 data class BotConfig(

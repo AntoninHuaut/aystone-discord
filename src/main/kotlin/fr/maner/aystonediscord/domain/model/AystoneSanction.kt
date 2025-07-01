@@ -9,7 +9,7 @@ import org.jetbrains.exposed.sql.ReferenceOption
 import java.util.*
 
 enum class SanctionType {
-    BAN, KICK, WARN, NOTE
+    BAN, UNBAN, KICK, WARN, NOTE
 }
 
 object AystoneSanctionsTable : IdTable<Int>("aystone_sanctions") {
@@ -21,7 +21,6 @@ object AystoneSanctionsTable : IdTable<Int>("aystone_sanctions") {
         onUpdate = ReferenceOption.CASCADE
     )
 
-    // ENUM BAN,KICK,WARN,NOTE
     val type = enumeration("type", SanctionType::class)
     val reason = varchar("reason", 255)
 
@@ -31,10 +30,10 @@ object AystoneSanctionsTable : IdTable<Int>("aystone_sanctions") {
 class AystoneSanctionEntity(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<AystoneSanctionEntity>(AystoneSanctionsTable)
 
-    var sanctionId by AystoneSanctionsTable.id
-    var playerUuid by AystonePlayerEntity referencedOn AystoneSanctionsTable.playerUuid
-    var type by AystoneSanctionsTable.type
-    var reason by AystoneSanctionsTable.reason
+    val sanctionId by AystoneSanctionsTable.id
+    val playerUuid by AystonePlayerEntity referencedOn AystoneSanctionsTable.playerUuid
+    val type by AystoneSanctionsTable.type
+    val reason by AystoneSanctionsTable.reason
 }
 
 data class AystoneSanction(

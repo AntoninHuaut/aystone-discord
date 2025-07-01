@@ -12,7 +12,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 class DatabaseConnection(
     private val dbConfig: DatabaseConfig
 ) {
-    private var dataSource: HikariDataSource
+    private val dataSource: HikariDataSource
 
     init {
         val jdbcUrl = "jdbc:postgresql://${dbConfig.host}:${dbConfig.port}/${dbConfig.name}"

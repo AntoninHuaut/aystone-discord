@@ -33,12 +33,12 @@ object AystonePlayersTable : IdTable<UUID>("aystone_players") {
 class AystonePlayerEntity(id: EntityID<UUID>) : Entity<UUID>(id) {
     companion object : EntityClass<UUID, AystonePlayerEntity>(AystonePlayersTable)
 
-    var uuid by AystonePlayersTable.id
-    var whitelist by AystonePlayersTable.whitelist
-    var ban by AystonePlayersTable.ban
-    var instance by AystoneInstanceEntity optionalReferencedOn AystonePlayersTable.instance
+    val uuid by AystonePlayersTable.id
+    val whitelist by AystonePlayersTable.whitelist
+    val ban by AystonePlayersTable.ban
+    val instance by AystoneInstanceEntity optionalReferencedOn AystonePlayersTable.instance
     val createdOn by AystonePlayersTable.createdOn
-    var lastLogin by AystonePlayersTable.lastLogin
+    val lastLogin by AystonePlayersTable.lastLogin
 }
 
 data class AystonePlayer(

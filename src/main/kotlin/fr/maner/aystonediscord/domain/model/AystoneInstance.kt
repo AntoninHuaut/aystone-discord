@@ -17,9 +17,9 @@ object AystoneInstancesTable : IdTable<String>("aystone_instances") {
 class AystoneInstanceEntity(id: EntityID<String>) : Entity<String>(id) {
     companion object : EntityClass<String, AystoneInstanceEntity>(AystoneInstancesTable)
 
-    var name by AystoneInstancesTable.id
-    var visible by AystoneInstancesTable.visible
-    var maxPlayer by AystoneInstancesTable.maxPlayer
+    val name by AystoneInstancesTable.id
+    val visible by AystoneInstancesTable.visible
+    val maxPlayer by AystoneInstancesTable.maxPlayer
 }
 
 data class AystoneInstance(

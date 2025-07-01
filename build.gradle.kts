@@ -19,6 +19,7 @@ dependencies {
     implementation("io.github.cdimascio:dotenv-kotlin:6.5.1")
     implementation("org.yaml:snakeyaml:2.4")
     implementation("org.slf4j:slf4j-simple:2.0.17")
+    implementation("com.google.code.gson:gson:2.13.1")
 
     // Database
     implementation("org.postgresql:postgresql:42.7.7")

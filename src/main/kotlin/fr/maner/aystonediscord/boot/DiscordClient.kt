@@ -7,9 +7,9 @@ import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.entities.Activity
 
-class DiscordClient(private var botConfig: BotConfig, private val aystonePlayerRepository: AystonePlayerRepository) {
+class DiscordClient(botConfig: BotConfig, private val aystonePlayerRepository: AystonePlayerRepository) {
 
-    private var jdaInstance: JDA = JDABuilder.createDefault(botConfig.token)
+    private val jdaInstance: JDA = JDABuilder.createDefault(botConfig.token)
         .setActivity(Activity.playing(botConfig.activity))
         .build()
 
