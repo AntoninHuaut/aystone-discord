@@ -8,15 +8,21 @@ import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.ReferenceOption
 import java.util.*
 
+enum class SanctionType {
+    BAN, KICK, WARN, NOTE
+}
+
 object AystoneSanctionsTable : IdTable<Int>("aystone_sanctions") {
     override val id: Column<EntityID<Int>> = integer("sanction_id").entityId()
-    val uuid = reference(
-        "uuid",
+    val playerUuid = reference(
+        "player_uuid",
         AystonePlayersTable,
         onDelete = ReferenceOption.SET_NULL,
         onUpdate = ReferenceOption.CASCADE
-    ).nullable()
-    val type = varchar("type", 5)
+    )
+
+    // ENUM BAN,KICK,WARN,NOTE
+    val type = enumeration("type", SanctionType::class)
     val reason = varchar("reason", 255)
 
     override val primaryKey = PrimaryKey(id)
@@ -26,22 +32,22 @@ class AystoneSanctionEntity(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<AystoneSanctionEntity>(AystoneSanctionsTable)
 
     var sanctionId by AystoneSanctionsTable.id
-    var player by AystonePlayerEntity optionalReferencedOn AystoneSanctionsTable.uuid
+    var playerUuid by AystonePlayerEntity referencedOn AystoneSanctionsTable.playerUuid
     var type by AystoneSanctionsTable.type
     var reason by AystoneSanctionsTable.reason
 }
 
 data class AystoneSanction(
     val sanctionId: Int,
-    val playerUuid: UUID?,
-    val type: String,
+    val playerUuid: UUID,
+    val type: SanctionType,
     val reason: String
 ) {
     companion object {
         fun fromEntity(entity: AystoneSanctionEntity): AystoneSanction {
             return AystoneSanction(
                 sanctionId = entity.sanctionId.value,
-                playerUuid = entity.player?.uuid?.value,
+                playerUuid = entity.playerUuid.uuid.value,
                 type = entity.type,
                 reason = entity.reason
             )

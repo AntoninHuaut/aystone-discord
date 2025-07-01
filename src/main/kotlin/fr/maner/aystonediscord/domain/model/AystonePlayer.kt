@@ -12,15 +12,16 @@ import java.util.*
 
 object AystonePlayersTable : IdTable<UUID>("aystone_players") {
     override val id: Column<EntityID<UUID>> = uuid("uuid").entityId()
+    val whitelist = bool("whitelist").default(false)
+    val ban = bool("ban").default(false)
     val instance = reference(
         "instance",
         AystoneInstancesTable,
         onDelete = ReferenceOption.SET_NULL,
         onUpdate = ReferenceOption.CASCADE
     ).nullable()
-    val whitelist = bool("whitelist").default(false)
-    val ban = bool("ban").default(false)
-    val lastLogin = datetime("last_login").nullable()
+    val createdOn = datetime("created_on")
+    val lastLogin = datetime("last_login")
 
     override val primaryKey = PrimaryKey(id)
 
@@ -33,26 +34,29 @@ class AystonePlayerEntity(id: EntityID<UUID>) : Entity<UUID>(id) {
     companion object : EntityClass<UUID, AystonePlayerEntity>(AystonePlayersTable)
 
     var uuid by AystonePlayersTable.id
-    var instance by AystoneInstanceEntity optionalReferencedOn AystonePlayersTable.instance
     var whitelist by AystonePlayersTable.whitelist
     var ban by AystonePlayersTable.ban
+    var instance by AystoneInstanceEntity optionalReferencedOn AystonePlayersTable.instance
+    val createdOn by AystonePlayersTable.createdOn
     var lastLogin by AystonePlayersTable.lastLogin
 }
 
 data class AystonePlayer(
     val uuid: UUID,
+    val whitelist: Boolean,
+    val ban: Boolean,
     val instanceName: String?,
-    val whitelist: Boolean = false,
-    val ban: Boolean = false,
-    val lastLogin: LocalDateTime? = null
+    val createdOn: LocalDateTime,
+    val lastLogin: LocalDateTime
 ) {
     companion object {
         fun fromEntity(entity: AystonePlayerEntity): AystonePlayer {
             return AystonePlayer(
                 uuid = entity.uuid.value,
-                instanceName = entity.instance?.name?.value,
                 whitelist = entity.whitelist,
                 ban = entity.ban,
+                instanceName = entity.instance?.name?.value,
+                createdOn = entity.createdOn,
                 lastLogin = entity.lastLogin,
             )
         }

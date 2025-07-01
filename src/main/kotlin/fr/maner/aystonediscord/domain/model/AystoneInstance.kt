@@ -9,6 +9,7 @@ import org.jetbrains.exposed.sql.Column
 object AystoneInstancesTable : IdTable<String>("aystone_instances") {
     override val id: Column<EntityID<String>> = varchar("name", 255).entityId()
     val visible = bool("visible")
+    val maxPlayer = integer("max_player")
 
     override val primaryKey = PrimaryKey(id)
 }
@@ -18,17 +19,20 @@ class AystoneInstanceEntity(id: EntityID<String>) : Entity<String>(id) {
 
     var name by AystoneInstancesTable.id
     var visible by AystoneInstancesTable.visible
+    var maxPlayer by AystoneInstancesTable.maxPlayer
 }
 
 data class AystoneInstance(
     val name: String,
-    val visible: Boolean
+    val visible: Boolean,
+    val maxPlayer: Int
 ) {
     companion object {
         fun fromEntity(entity: AystoneInstanceEntity): AystoneInstance {
             return AystoneInstance(
                 name = entity.name.value,
-                visible = entity.visible
+                visible = entity.visible,
+                maxPlayer = entity.maxPlayer
             )
         }
     }

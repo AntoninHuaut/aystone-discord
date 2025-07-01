@@ -17,7 +17,7 @@ class AystoneSanctionRepository {
     }
 
     fun getByUuid(uuid: UUID): List<AystoneSanction> = transaction {
-        AystoneSanctionEntity.find { AystoneSanctionsTable.uuid eq uuid }
+        AystoneSanctionEntity.find { AystoneSanctionsTable.playerUuid eq uuid }
             .map { AystoneSanction.fromEntity(it) }
     }
 }
