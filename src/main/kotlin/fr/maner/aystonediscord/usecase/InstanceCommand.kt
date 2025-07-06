@@ -88,7 +88,6 @@ class InstanceCommand(
 
         event.replyEmbeds(embed)
             .setActionRow(*buttons.map { it as ItemComponent }.toTypedArray())
-            .setEphemeral(true)
             .queue()
     }
 

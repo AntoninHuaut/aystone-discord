@@ -131,12 +131,12 @@ class WhoisCommand(
                 val mcUUID: UUID? = try {
                     MojangAPI.getUUID(mcName)
                 } catch (e: Exception) {
-                    event.reply("❌ Erreur lors de la récupération du UUID Minecraft pour `$mcName`: ${e.message}").setEphemeral(true).queue()
+                    event.reply("❌ Error while getting Minecraft UUID for `$mcName`: ${e.message}").setEphemeral(true).queue()
                     return
                 }
 
                 if (mcUUID == null) {
-                    event.reply("❌ Joueur Minecraft `$mcName` introuvable.").setEphemeral(true).queue()
+                    event.reply("❌ Minecraft player `$mcName` not found.").setEphemeral(true).queue()
                     return
                 }
 
@@ -158,7 +158,7 @@ class WhoisCommand(
             return
         }
 
-        event.replyEmbeds(toEmbed(aystonePlayer, keycloakPlayer)).setEphemeral(true).queue()
+        event.replyEmbeds(toEmbed(aystonePlayer, keycloakPlayer)).queue()
     }
 
     private fun getAystonePlayer(keycloakPlayer: KeycloakPlayer): AystonePlayer? {

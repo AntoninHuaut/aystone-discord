@@ -109,9 +109,7 @@ class PaginatedEmbed<T>(
             }
 
             else -> {
-                event.reply("❌ Unknown pagination action.")
-                    .setEphemeral(true)
-                    .queue()
+                event.reply("❌ Unknown pagination action.").setEphemeral(true).queue()
                 PaginationResult.Error
             }
         }
