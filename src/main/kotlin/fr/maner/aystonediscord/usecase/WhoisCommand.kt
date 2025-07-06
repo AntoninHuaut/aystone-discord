@@ -71,14 +71,8 @@ class WhoisCommand(
 
         // TODO get KeycloakPlayer by Discord ID
         val kPlayer = KeycloakPlayer(discordId, UUID.fromString("b5238882-0706-49c2-992d-538ab1b057f6"), "")
-        val aPlayer = getAystonePlayer(kPlayer)
 
-        if (aPlayer == null) {
-            event.reply("❌ No Aystone player found for ${targetUser.asMention}.").setEphemeral(true).queue()
-            return
-        }
-
-        retrieveInfoAndSendEmbed(event, aPlayer, kPlayer)
+        retrieveInfoAndSendEmbed(event, kPlayer)
     }
 
     override fun onSlashCommandInteraction(event: SlashCommandInteractionEvent) {
@@ -138,7 +132,7 @@ class WhoisCommand(
                     try {
                         MinecraftAPI.getUUID(mcName) ?: throw Exception("not found")
                     } catch (e: Exception) {
-                        event.reply("❌ Error while fetching Minecraft UUID for `$mcName`: ${e.message}").setEphemeral(true).queue()
+                        event.reply("❌ Error while fetching Minecraft UUID for `$mcName`: ${e.message}.").setEphemeral(true).queue()
                         null
                     }
                 } ?: return
@@ -151,25 +145,25 @@ class WhoisCommand(
         }
 
         if (kPlayer == null) {
-            event.reply("❌ Keycloak Player not found for the provided option: `${option.name}` with value `${option.asString}`.").setEphemeral(true).queue()
+            event.reply("❌ Keycloak Player not found. The player may have never linked their accounts.").setEphemeral(true).queue()
             return
         }
 
-        val aPlayer = getAystonePlayer(kPlayer)
-        if (aPlayer == null) {
-            event.reply("❌ Aystone Player not found for the provided option: `${option.name}` with value `${option.asString}`.").setEphemeral(true).queue()
-            return
-        }
-
-        retrieveInfoAndSendEmbed(event, aPlayer, kPlayer)
+        retrieveInfoAndSendEmbed(event, kPlayer)
     }
 
-    fun retrieveInfoAndSendEmbed(event: GenericCommandInteractionEvent, aPlayer: AystonePlayer, kPlayer: KeycloakPlayer) {
+    fun retrieveInfoAndSendEmbed(event: GenericCommandInteractionEvent, kPlayer: KeycloakPlayer) {
+        val aPlayer = getAystonePlayer(kPlayer)
+        if (aPlayer == null) {
+            event.reply("❌ Aystone Player not found. The player may have never joined the server.").setEphemeral(true).queue()
+            return
+        }
+
         val mcName: String = runBlocking {
             try {
                 MinecraftAPI.getName(aPlayer.uuid) ?: throw Exception("not found")
             } catch (e: Exception) {
-                event.reply("❌ Error while fetching Minecraft name for `${aPlayer.uuid}`: ${e.message}").setEphemeral(true).queue()
+                event.reply("❌ Error while fetching Minecraft name for `${aPlayer.uuid}`: ${e.message}.").setEphemeral(true).queue()
                 null
             }
         } ?: return
