@@ -1,4 +1,3 @@
-// Option 1: Pure Kotlin version
 package fr.maner.aystonediscord.usecase
 
 import fr.maner.aystonediscord.api.MojangAPI
@@ -21,7 +20,7 @@ import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.*
 
-class DiscordWhoisCommand(
+class WhoisCommand(
     private val aystonePlayerRepository: AystonePlayerRepository,
 ) : ListenerAdapter() {
 
@@ -35,6 +34,7 @@ class DiscordWhoisCommand(
     object Options {
         data class Option(val name: String, val description: String, val type: OptionType)
 
+        // TODO discord as menu user option
         val DISCORD_MENTION = Option("discord_mention", "Discord user to display", OptionType.USER)
         val DISCORD_ID = Option("discord_id", "Discord id to display", OptionType.STRING)
         val MC_UUID = Option("mc_uuid", "Minecraft uuid to display", OptionType.STRING)
@@ -56,26 +56,24 @@ class DiscordWhoisCommand(
     }
 
     override fun onSlashCommandInteraction(event: SlashCommandInteractionEvent) {
-        if (event.name == NAME) {
-            val providedOptions = Options.ALL.mapNotNull { option ->
-                event.getOption(option.name)
+        if (event.name != NAME) return
+
+        val providedOptions = Options.ALL.mapNotNull { option ->
+            event.getOption(option.name)
+        }
+
+        when (providedOptions.size) {
+            0 -> {
+                event.reply("❌ Please provide exactly one option: ${Options.ALL.joinToString(", ") { it.description.lowercase() }}.").setEphemeral(true).queue()
+                return
             }
 
-            when (providedOptions.size) {
-                0 -> {
-                    event.reply("❌ Please provide exactly one option: ${Options.ALL.joinToString(", ") { it.description.lowercase() }}.")
-                        .setEphemeral(true).queue()
-                    return
-                }
+            1 -> {
+                handleSingleOption(event, providedOptions.first())
+            }
 
-                1 -> {
-                    handleSingleOption(event, providedOptions.first())
-                }
-
-                else -> {
-                    event.reply("❌ Please provide exactly one option, not multiple.")
-                        .setEphemeral(true).queue()
-                }
+            else -> {
+                event.reply("❌ Please provide exactly one option, not multiple.").setEphemeral(true).queue()
             }
         }
     }
@@ -176,7 +174,7 @@ class DiscordWhoisCommand(
             .setThumbnail("$MINOTAR_URL/${aPlayer.uuid}.png")
             .setTimestamp(Instant.now())
             .setTitle("👤 Player Info")
-            
+
             .addField("UUID", aPlayer.uuid.toString(), false)
 
             .addField("Whitelist", if (aPlayer.whitelist) "✅ Yes" else "❌ No", true)

@@ -1,5 +1,6 @@
 package fr.maner.aystonediscord.boot
 
+import fr.maner.aystonediscord.repository.AystoneInstanceRepository
 import fr.maner.aystonediscord.repository.AystonePlayerRepository
 
 class ApplicationBootstrap {
@@ -9,7 +10,7 @@ class ApplicationBootstrap {
             val config = ConfigLoader.loadConfig().getOrThrow()
 
             val dbConnection = DatabaseConnection(config.database)
-            val discordClient = DiscordClient(config.bot, AystonePlayerRepository())
+            val discordClient = DiscordClient(config.bot, AystonePlayerRepository(), AystoneInstanceRepository())
 
             Runtime.getRuntime().addShutdownHook(Thread {
                 println("Shutting down...")
