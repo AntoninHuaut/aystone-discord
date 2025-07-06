@@ -12,7 +12,7 @@ import java.util.*
 
 object AystonePlayersTable : IdTable<UUID>("aystone_players") {
     override val id: Column<EntityID<UUID>> = uuid("uuid").entityId()
-    val whitelist = bool("whitelist").default(false)
+    val whitelist = bool("whitelist").default(true)
     val ban = bool("ban").default(false)
     val instance = reference(
         "instance",
@@ -20,8 +20,8 @@ object AystonePlayersTable : IdTable<UUID>("aystone_players") {
         onDelete = ReferenceOption.SET_NULL,
         onUpdate = ReferenceOption.CASCADE
     ).nullable()
-    val createdOn = datetime("created_on")
-    val lastLogin = datetime("last_login")
+    val createdOn = datetime("created_on").default(LocalDateTime.now())
+    val lastLogin = datetime("last_login").default(LocalDateTime.now())
 
     override val primaryKey = PrimaryKey(id)
 

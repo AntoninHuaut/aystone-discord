@@ -1,7 +1,9 @@
 package fr.maner.aystonediscord.usecase
 
+import fr.maner.aystonediscord.domain.model.AystoneInstance
 import fr.maner.aystonediscord.repository.AystoneInstanceRepository
 import fr.maner.aystonediscord.usecase.helper.PaginatedEmbed
+import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent
@@ -77,9 +79,8 @@ class InstanceCommand(
         }
 
         val paginatorKey = "${event.user.id}_${event.id}"
-        val paginator = PaginatedEmbed(instances, "Instance List", itemsPerPage = 9, fieldBuilder = { i, instance, embed ->
-            embed.addField("${if (instance.visible) "🟢" else "🟠"} ${instance.name}", "Max players: ${instance.maxPlayer}", true)
-        })
+        val paginator =
+            PaginatedEmbed(instances, "Instance List", itemsPerPage = 9, fieldBuilder = { i, instance, embed -> createFieldInstance(instance, embed) })
         activePaginators[paginatorKey] = PaginatorData(paginator)
 
         val page = 0
@@ -89,6 +90,18 @@ class InstanceCommand(
         event.replyEmbeds(embed)
             .setActionRow(*buttons.map { it as ItemComponent }.toTypedArray())
             .queue()
+    }
+
+    fun createFieldInstance(instance: AystoneInstance, embed: EmbedBuilder): EmbedBuilder {
+        return embed.addField(
+            instance.name,
+            listOf(
+                "Max players: ${instance.maxPlayer}",
+                if (instance.enabled) "✅ Enabled" else "❌ Disabled",
+                if (instance.visible) "✅ Visible" else "❌ Invisible",
+            ).joinToString("\n"),
+            true
+        )
     }
 
     override fun onButtonInteraction(event: ButtonInteractionEvent) {

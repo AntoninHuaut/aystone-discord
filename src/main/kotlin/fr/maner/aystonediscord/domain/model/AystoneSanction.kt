@@ -6,6 +6,8 @@ import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IdTable
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.ReferenceOption
+import org.jetbrains.exposed.sql.javatime.datetime
+import java.time.LocalDateTime
 import java.util.*
 
 enum class SanctionType {
@@ -22,7 +24,9 @@ object AystoneSanctionsTable : IdTable<Int>("aystone_sanctions") {
     )
 
     val type = enumeration("type", SanctionType::class)
-    val reason = varchar("reason", 255)
+    val reason = varchar("reason", 255).nullable()
+    val until = datetime("until").nullable()
+    val sanctionApplied = datetime("sanction_applied").default(LocalDateTime.now())
 
     override val primaryKey = PrimaryKey(id)
 }
@@ -34,13 +38,17 @@ class AystoneSanctionEntity(id: EntityID<Int>) : IntEntity(id) {
     val playerUuid by AystonePlayerEntity referencedOn AystoneSanctionsTable.playerUuid
     val type by AystoneSanctionsTable.type
     val reason by AystoneSanctionsTable.reason
+    val until by AystoneSanctionsTable.until
+    val sanctionApplied by AystoneSanctionsTable.sanctionApplied
 }
 
 data class AystoneSanction(
     val sanctionId: Int,
     val playerUuid: UUID,
     val type: SanctionType,
-    val reason: String
+    val reason: String?,
+    val until: LocalDateTime?,
+    val sanctionApplied: LocalDateTime
 ) {
     companion object {
         fun fromEntity(entity: AystoneSanctionEntity): AystoneSanction {
@@ -48,7 +56,9 @@ data class AystoneSanction(
                 sanctionId = entity.sanctionId.value,
                 playerUuid = entity.playerUuid.uuid.value,
                 type = entity.type,
-                reason = entity.reason
+                reason = entity.reason,
+                until = entity.until,
+                sanctionApplied = entity.sanctionApplied
             )
         }
     }

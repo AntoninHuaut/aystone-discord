@@ -33,7 +33,8 @@ class DiscordClient(
 
         jdaInstance.guilds.forEach { guild ->
             guild.updateCommands().addCommands(
-                whoisCmd.createCommand(),
+                whoisCmd.createSlashCommand(),
+                whoisCmd.createContextCommand(),
                 instanceCmd.createCommand()
             ).queue()
         }
