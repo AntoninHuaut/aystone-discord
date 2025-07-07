@@ -62,15 +62,13 @@ class InstanceCommand(
 
         val (embed, buttons) = PaginatedEmbed.handleNewPagination(
             event, BUTTON_PREFIX, instances,
-            title = "Instance List",
+            title = "\uD83D\uDCCB Instance List", // 📋
             userPermission = PERMISSION,
             itemsPerPage = 9,
             fieldBuilder = { i, sanction, embed -> createFieldInstance(sanction, embed) },
         )
 
-        event.replyEmbeds(embed)
-            .setActionRow(*buttons.map { it as ItemComponent }.toTypedArray())
-            .queue()
+        event.replyEmbeds(embed).setActionRow(*buttons.map { it as ItemComponent }.toTypedArray()).queue()
     }
 
 

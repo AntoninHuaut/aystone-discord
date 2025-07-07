@@ -6,7 +6,6 @@ import fr.maner.aystonediscord.domain.model.AystoneSanction
 import fr.maner.aystonediscord.domain.model.KeycloakPlayer
 import fr.maner.aystonediscord.repository.AystonePlayerRepository
 import fr.maner.aystonediscord.repository.AystoneSanctionRepository
-import fr.maner.aystonediscord.usecase.helper.KeycloakPlayerRetrieve
 import fr.maner.aystonediscord.usecase.helper.PaginatedEmbed
 import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.EmbedBuilder
@@ -53,12 +52,10 @@ class WhoisCommand(
     object Options {
         data class Option(val name: String, val description: String, val type: OptionType)
 
-        val MC_UUID = Option("mc_uuid", "Minecraft uuid to display", OptionType.STRING)
-        val MC_NAME = Option("mc_name", "Minecraft name to display", OptionType.STRING)
-        val TWITCH_ID = Option("twitch_id", "Twitch id to display", OptionType.STRING)
-        val TWITCH_NAME = Option("twitch_name", "Twitch name to display", OptionType.STRING)
+        val MINECRAFT_NAME_UUID = Option("minecraft", "Minecraft name or uuid", OptionType.STRING)
+        val TWITCH_ID_NAME = Option("twitch", "Twitch id or name", OptionType.STRING)
 
-        val ALL = listOf(MC_UUID, MC_NAME, TWITCH_ID, TWITCH_NAME)
+        val ALL = listOf(MINECRAFT_NAME_UUID, TWITCH_ID_NAME)
     }
 
     fun createSlashCommand(): SlashCommandData {
@@ -80,11 +77,8 @@ class WhoisCommand(
     override fun onUserContextInteraction(event: UserContextInteractionEvent) {
         if (event.name != CONTEXT_MENU_NAME) return
 
-        val targetUser = event.target
-        val discordId = targetUser.id
-
         // TODO get KeycloakPlayer by Discord ID
-        val kPlayer = KeycloakPlayer(discordId, UUID.fromString("b5238882-0706-49c2-992d-538ab1b057f6"), "")
+        val kPlayer = KeycloakPlayer(event.target.id, UUID.fromString("b5238882-0706-49c2-992d-538ab1b057f6"), "")
 
         displayWhois(event, kPlayer)
     }
@@ -104,17 +98,42 @@ class WhoisCommand(
 
             1 -> {
                 val option = providedOptions.first()
-                val kPlayer = KeycloakPlayerRetrieve.byOption(option.name, option.asString) ?: run {
-                    event.reply("❌ Invalid option provided: `${option.name}` with value `${option.asString}`.").setEphemeral(true).queue()
-                    return
-                }
-
+                val kPlayer = getKeycloakPlayerByOption(event, option.name, option.asString) ?: return
                 displayWhois(event, kPlayer)
             }
 
             else -> {
                 event.reply("❌ Please provide exactly one option, not multiple.").setEphemeral(true).queue()
             }
+        }
+    }
+
+    fun getKeycloakPlayerByOption(event: GenericCommandInteractionEvent, optionName: String, optionValue: String): KeycloakPlayer? {
+        when (optionName) {
+            Options.TWITCH_ID_NAME.name -> {
+                val twitchIdOrName = optionValue
+
+                // TODO get Twitch ID by name
+                // TODO get KeycloakPlayer by ID Twitch
+                return KeycloakPlayer("", UUID.randomUUID(), "")
+            }
+
+            Options.MINECRAFT_NAME_UUID.name -> {
+                val mcNameOrUuid = optionValue
+
+                return runBlocking {
+                    try {
+                        val mcInfo = PlayerDBApi.getByNameOrUuid(mcNameOrUuid) ?: throw Exception("not found")
+                        return@runBlocking KeycloakPlayer("", UUID.fromString(mcInfo.id), "")
+                    } catch (e: Exception) {
+                        event.reply("❌ Error while fetching Minecraft Name or UUID `$mcNameOrUuid`: ${e.message}.").setEphemeral(true).queue()
+                        return@runBlocking null
+                    }
+                }
+            }
+
+            else -> return null
+
         }
     }
 
@@ -173,7 +192,7 @@ class WhoisCommand(
 
             .addField("Created On", aPlayer.createdOn.format(DATE_FORMATTER), true)
             .addField("Last Login", aPlayer.lastLogin.format(DATE_FORMATTER), true)
-            .addField("\u200B", "\u200B", true)
+            .addField("\u200B", "\u200B", true) // Empty field for spacing
 
             .addField("Twitch", "TBD Twitch Name (`${kPlayer.twitchId}`)", true)
             .addField("Discord", "TBD Discord Name (`${kPlayer.discordId}`)", true)
@@ -216,7 +235,7 @@ class WhoisCommand(
 
             val (embed, buttons) = PaginatedEmbed.handleNewPagination(
                 event, BUTTON_PREFIX_SANCTION_SEE, sanctions,
-                title = "Sanction List: `${mcInfo.username}`",
+                title = "⚖\uFE0F Sanction List: `${mcInfo.username}`", // ⚖️
                 userPermission = PERMISSION,
                 itemsPerPage = 9,
                 fieldBuilder = { i, sanction, embed -> createFieldSanction(sanction, embed) },
@@ -229,10 +248,7 @@ class WhoisCommand(
                 }
             )
 
-            event.replyEmbeds(embed)
-                .mentionRepliedUser(true)
-                .setActionRow(*buttons.map { it as ItemComponent }.toTypedArray())
-                .queue()
+            event.replyEmbeds(embed).setActionRow(*buttons.map { it as ItemComponent }.toTypedArray()).queue()
         } else if (componentId.startsWith(BUTTON_PREFIX_SANCTION_SEE)) {
             PaginatedEmbed.handleUpdatePagination(event, BUTTON_PREFIX_SANCTION_SEE)
         }

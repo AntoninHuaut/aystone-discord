@@ -12,10 +12,10 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 data class PaginationEmojis(
-    val first: String = "⏮\uFE0F",
+    val first: String = "⏮\uFE0F", // Double arrow left
     val previous: String = "⏪",
     val next: String = "⏩",
-    val last: String = "⏭\uFE0F"
+    val last: String = "⏭\uFE0F" // Double arrow right
 )
 
 sealed class PaginationResult {
@@ -105,9 +105,7 @@ class PaginatedEmbed<T>(
 
             val paginatorData = activePaginators[paginatorKey]
             if (paginatorData == null) {
-                event.reply("❌ This pagination session has expired. Please run the command again.")
-                    .setEphemeral(true)
-                    .queue()
+                event.reply("❌ This pagination session has expired. Please run the command again.").setEphemeral(true).queue()
                 return
             }
 
@@ -118,9 +116,7 @@ class PaginatedEmbed<T>(
                     val embed = paginator.getEmbedPage(newPage)
                     val buttons = paginator.getPaginationButtons(currentPage = newPage, prefix = btnPrefix, key = paginatorKey)
 
-                    event.editMessageEmbeds(embed)
-                        .setActionRow(*buttons.map { it as ItemComponent }.toTypedArray())
-                        .queue()
+                    event.editMessageEmbeds(embed).setActionRow(*buttons.map { it as ItemComponent }.toTypedArray()).queue()
                 }
 
                 else -> {}
