@@ -22,6 +22,7 @@ class InstanceCommand(
     companion object {
         const val NAME = "instance"
         const val DESCRIPTION = "Instance command"
+        val PERMISSION = Permission.MESSAGE_MANAGE
 
         const val LIST_NAME = "list"
         const val LIST_DESCRIPTION = "List all instances"
@@ -62,6 +63,7 @@ class InstanceCommand(
         val (embed, buttons) = PaginatedEmbed.handleNewPagination(
             event, BUTTON_PREFIX, instances,
             title = "Instance List",
+            userPermission = PERMISSION,
             itemsPerPage = 9,
             fieldBuilder = { i, sanction, embed -> createFieldInstance(sanction, embed) },
         )

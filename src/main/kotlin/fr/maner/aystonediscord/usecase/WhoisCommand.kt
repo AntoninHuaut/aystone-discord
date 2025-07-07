@@ -40,6 +40,7 @@ class WhoisCommand(
         const val NAME = "whois"
         const val DESCRIPTION = "Displays information about a player"
         const val CONTEXT_MENU_NAME = "Aystone Player Info"
+        val PERMISSION = Permission.MESSAGE_MANAGE
 
         private const val BUTTON_PREFIX_SANCTION_NOTHING = "whois_sanction_nothing"
         private const val BUTTON_PREFIX_SANCTION_ASK = "whois_sanction_ask"
@@ -62,7 +63,7 @@ class WhoisCommand(
 
     fun createSlashCommand(): SlashCommandData {
         val baseCommand = Commands.slash(NAME, DESCRIPTION)
-            .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.MESSAGE_MANAGE))
+            .setDefaultPermissions(DefaultMemberPermissions.enabledFor(PERMISSION))
             .setContexts(InteractionContextType.GUILD)
 
         return Options.ALL.fold(baseCommand) { cmd, option ->
@@ -72,7 +73,7 @@ class WhoisCommand(
 
     fun createContextCommand(): CommandData {
         return Commands.user(CONTEXT_MENU_NAME)
-            .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.MESSAGE_MANAGE))
+            .setDefaultPermissions(DefaultMemberPermissions.enabledFor(PERMISSION))
             .setContexts(InteractionContextType.GUILD)
     }
 
@@ -183,6 +184,13 @@ class WhoisCommand(
         val componentId = event.componentId
 
         if (componentId.startsWith(BUTTON_PREFIX_SANCTION_ASK)) {
+            event.member?.hasPermission(PERMISSION)?.let {
+                if (!it) {
+                    event.reply("❌ You do not have permission.").setEphemeral(true).queue()
+                    return
+                }
+            }
+
             val uuidRaw = componentId.substringAfter("$BUTTON_PREFIX_SANCTION_ASK:")
             val uuid = try {
                 UUID.fromString(uuidRaw)
@@ -209,6 +217,7 @@ class WhoisCommand(
             val (embed, buttons) = PaginatedEmbed.handleNewPagination(
                 event, BUTTON_PREFIX_SANCTION_SEE, sanctions,
                 title = "Sanction List: `${mcInfo.username}`",
+                userPermission = PERMISSION,
                 itemsPerPage = 9,
                 fieldBuilder = { i, sanction, embed -> createFieldSanction(sanction, embed) },
                 embedBuilder = {

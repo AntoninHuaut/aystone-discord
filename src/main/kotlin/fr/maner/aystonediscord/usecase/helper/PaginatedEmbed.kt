@@ -1,6 +1,8 @@
 package fr.maner.aystonediscord.usecase.helper
 
+import fr.maner.aystonediscord.usecase.WhoisCommand.Companion.PERMISSION
 import net.dv8tion.jda.api.EmbedBuilder
+import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.MessageEmbed
 import net.dv8tion.jda.api.events.interaction.GenericInteractionCreateEvent
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent
@@ -30,6 +32,7 @@ data class PaginatorData(
 class PaginatedEmbed<T>(
     private val items: List<T>,
     private val title: String = "Paginated List",
+    private val userPermission: Permission,
     private val itemsPerPage: Int = 5,
     private val embedBuilder: (EmbedBuilder) -> EmbedBuilder = { it },
     private val fieldBuilder: (Int, T, EmbedBuilder) -> EmbedBuilder,
@@ -55,6 +58,7 @@ class PaginatedEmbed<T>(
             btnPrefix: String,
             items: List<T>,
             title: String = "Paginated List",
+            userPermission: Permission,
             itemsPerPage: Int = 5,
             embedBuilder: (EmbedBuilder) -> EmbedBuilder = { it },
             fieldBuilder: (Int, T, EmbedBuilder) -> EmbedBuilder,
@@ -63,9 +67,10 @@ class PaginatedEmbed<T>(
             val paginator = PaginatedEmbed(
                 items = items,
                 title = title,
+                userPermission = userPermission,
                 itemsPerPage = itemsPerPage,
                 embedBuilder = embedBuilder,
-                fieldBuilder = fieldBuilder
+                fieldBuilder = fieldBuilder,
             )
 
             activePaginators[paginatorKey] = PaginatorData(paginator)
@@ -90,6 +95,13 @@ class PaginatedEmbed<T>(
             val paginatorKey = parts[1]
             val action = parts[2]
             val currentPage = parts[3].toIntOrNull() ?: return
+
+            event.member?.hasPermission(PERMISSION)?.let {
+                if (!it) {
+                    event.reply("❌ You do not have permission.").setEphemeral(true).queue()
+                    return
+                }
+            }
 
             val paginatorData = activePaginators[paginatorKey]
             if (paginatorData == null) {
