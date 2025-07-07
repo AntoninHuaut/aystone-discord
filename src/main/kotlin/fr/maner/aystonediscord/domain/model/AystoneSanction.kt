@@ -23,7 +23,7 @@ object AystoneSanctionsTable : IdTable<Int>("aystone_sanctions") {
         onUpdate = ReferenceOption.CASCADE
     )
 
-    val type = enumeration("type", SanctionType::class)
+    val type = customEnumeration("type", "VARCHAR", { value -> SanctionType.valueOf(value as String) }, { it.name })
     val reason = varchar("reason", 255).nullable()
     val until = datetime("until").nullable()
     val sanctionApplied = datetime("sanction_applied").default(LocalDateTime.now())

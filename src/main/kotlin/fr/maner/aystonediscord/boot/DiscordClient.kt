@@ -6,6 +6,7 @@ import fr.maner.aystonediscord.repository.AystonePlayerRepository
 import fr.maner.aystonediscord.repository.AystoneSanctionRepository
 import fr.maner.aystonediscord.usecase.InstanceCommand
 import fr.maner.aystonediscord.usecase.WhoisCommand
+import fr.maner.aystonediscord.usecase.helper.PaginatedEmbed
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.entities.Activity
@@ -41,7 +42,7 @@ class DiscordClient(
     }
 
     fun close() {
-        instanceCmd.shutdown()
+        PaginatedEmbed.shutdown()
         if (jdaInstance.status != JDA.Status.SHUTDOWN) {
             jdaInstance.shutdown()
             jdaInstance.awaitShutdown()
