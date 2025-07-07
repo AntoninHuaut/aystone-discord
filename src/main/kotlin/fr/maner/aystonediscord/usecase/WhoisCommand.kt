@@ -1,9 +1,10 @@
 package fr.maner.aystonediscord.usecase
 
-import fr.maner.aystonediscord.api.MinecraftAPI
+import fr.maner.aystonediscord.api.PlayerDBApi
 import fr.maner.aystonediscord.domain.model.AystonePlayer
 import fr.maner.aystonediscord.domain.model.KeycloakPlayer
 import fr.maner.aystonediscord.repository.AystonePlayerRepository
+import fr.maner.aystonediscord.repository.AystoneSanctionRepository
 import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.Permission
@@ -26,6 +27,7 @@ import java.util.*
 
 class WhoisCommand(
     private val aystonePlayerRepository: AystonePlayerRepository,
+    private val aystoneSanctionRepository: AystoneSanctionRepository,
 ) : ListenerAdapter() {
 
     companion object {
@@ -130,7 +132,8 @@ class WhoisCommand(
                 val mcName = option.asString
                 val mcUUID: UUID = runBlocking {
                     try {
-                        MinecraftAPI.getUUID(mcName) ?: throw Exception("not found")
+                        val mcInfo = PlayerDBApi.getByNameOrUuid(mcName) ?: throw Exception("not found")
+                        UUID.fromString(mcInfo.id)
                     } catch (e: Exception) {
                         event.reply("❌ Error while fetching Minecraft UUID for `$mcName`: ${e.message}.").setEphemeral(true).queue()
                         null
@@ -159,16 +162,19 @@ class WhoisCommand(
             return
         }
 
-        val mcName: String = runBlocking {
+        val mcInfo: String = runBlocking {
             try {
-                MinecraftAPI.getName(aPlayer.uuid) ?: throw Exception("not found")
+                val mcInfo = PlayerDBApi.getByNameOrUuid(aPlayer.uuid.toString()) ?: throw Exception("not found")
+                mcInfo.username
             } catch (e: Exception) {
                 event.reply("❌ Error while fetching Minecraft name for `${aPlayer.uuid}`: ${e.message}.").setEphemeral(true).queue()
                 null
             }
         } ?: return
 
-        event.replyEmbeds(toEmbed(aPlayer, kPlayer, mcName)).queue()
+        val sanctions = aystoneSanctionRepository.getByUuid(kPlayer.mcUuid)
+
+        event.replyEmbeds(toEmbed(aPlayer, kPlayer, mcInfo)).queue()
     }
 
     private fun getAystonePlayer(keycloakPlayer: KeycloakPlayer): AystonePlayer? {
