@@ -63,7 +63,7 @@ class InstanceCommand(
             event, BUTTON_PREFIX, instances,
             title = "Instance List",
             itemsPerPage = 9,
-            fieldBuilder = { i, sanction, embed -> createFieldInstance(sanction, embed) }
+            fieldBuilder = { i, sanction, embed -> createFieldInstance(sanction, embed) },
         )
 
         event.replyEmbeds(embed)

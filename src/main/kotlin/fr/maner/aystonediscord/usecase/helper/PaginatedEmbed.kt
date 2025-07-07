@@ -57,7 +57,7 @@ class PaginatedEmbed<T>(
             title: String = "Paginated List",
             itemsPerPage: Int = 5,
             embedBuilder: (EmbedBuilder) -> EmbedBuilder = { it },
-            fieldBuilder: (Int, T, EmbedBuilder) -> EmbedBuilder
+            fieldBuilder: (Int, T, EmbedBuilder) -> EmbedBuilder,
         ): Pair<MessageEmbed, List<Button>> {
             val paginatorKey = "${event.user.id}_${event.id}"
             val paginator = PaginatedEmbed(
@@ -77,7 +77,10 @@ class PaginatedEmbed<T>(
             return embed to buttons
         }
 
-        fun handleUpdatePagination(event: ButtonInteractionEvent, btnPrefix: String) {
+        fun handleUpdatePagination(
+            event: ButtonInteractionEvent,
+            btnPrefix: String,
+        ) {
             val parts = event.componentId.split(":")
             if (parts.size < 4) return
 

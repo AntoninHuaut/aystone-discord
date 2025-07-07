@@ -135,13 +135,13 @@ class WhoisCommand(
         } ?: return
 
         val buttons = mutableListOf<Button>()
-        val sanctions = aystoneSanctionRepository.getByUuid(kPlayer.mcUuid)
+        val nbSanctions = aystoneSanctionRepository.countByUuid(kPlayer.mcUuid)
 
-        if (sanctions.isNotEmpty()) {
+        if (nbSanctions > 0) {
             buttons.add(
                 Button.primary(
                     "${BUTTON_PREFIX_SANCTION_ASK}:${kPlayer.mcUuid}",
-                    if (sanctions.size > 1) "See the ${sanctions.size} sanctions" else "See the sanction"
+                    if (nbSanctions > 1) "See the $nbSanctions sanctions" else "See the sanction"
                 )
                     .withEmoji(Emoji.fromUnicode("⚠"))
             )
@@ -191,17 +191,33 @@ class WhoisCommand(
                 return
             }
 
-            val sanctions = aystoneSanctionRepository.getByUuid(uuid)
+            val sanctions = aystoneSanctionRepository.getByUuidSortDateDesc(uuid)
             if (sanctions.isEmpty()) {
                 event.reply("❌ No sanctions found.").setEphemeral(true).queue()
                 return
             }
 
+            val mcInfo: PlayerDBApi.PlayerInfo = runBlocking {
+                try {
+                    return@runBlocking PlayerDBApi.getByNameOrUuid(uuid.toString())
+                } catch (e: Exception) {
+                    event.reply("❌ Error while fetching Minecraft name for `$uuid`: ${e.message}.").setEphemeral(true).queue()
+                    return@runBlocking null
+                }
+            } ?: return
+
             val (embed, buttons) = PaginatedEmbed.handleNewPagination(
                 event, BUTTON_PREFIX_SANCTION_SEE, sanctions,
-                title = "Sanction List",
-                itemsPerPage = 2,
-                fieldBuilder = { i, sanction, embed -> createFieldSanction(sanction, embed) }
+                title = "Sanction List: `${mcInfo.username}`",
+                itemsPerPage = 9,
+                fieldBuilder = { i, sanction, embed -> createFieldSanction(sanction, embed) },
+                embedBuilder = {
+                    it.setThumbnail("$MINOTAR_URL/${uuid}.png")
+                    it.setFooter(
+                        "Requested by ${event.user.name}",
+                        event.user.effectiveAvatarUrl
+                    )
+                }
             )
 
             event.replyEmbeds(embed)
