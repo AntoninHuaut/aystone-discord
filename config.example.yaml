@@ -1,7 +1,9 @@
 bot:
   token: ""
   activity: "👀 Checking users"
-
+  rolesId:
+    - "264156076079972374" # AyTeam
+    - "264488569450528768" # Modérateurs
 database:
   host: ""
   port: ""

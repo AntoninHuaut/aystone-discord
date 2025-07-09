@@ -1,6 +1,6 @@
 services:
   aystone-discord:
-    build: .
+    image: ghcr.io/antoninhuaut/aystone-discord:master
     container_name: aystone-discord
     restart: unless-stopped
     volumes:

@@ -7,7 +7,8 @@ data class AppConfig(
 
 data class BotConfig(
     var token: String = "",
-    var activity: String = ""
+    var activity: String = "",
+    var rolesId: List<String> = emptyList(),
 )
 
 data class DatabaseConfig(

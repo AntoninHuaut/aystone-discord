@@ -1,12 +1,12 @@
 package fr.maner.aystonediscord.boot
 
+import fr.maner.aystonediscord.command.InstanceCommand
+import fr.maner.aystonediscord.command.WhoisCommand
+import fr.maner.aystonediscord.command.helper.PaginatedEmbed
 import fr.maner.aystonediscord.domain.BotConfig
 import fr.maner.aystonediscord.repository.AystoneInstanceRepository
 import fr.maner.aystonediscord.repository.AystonePlayerRepository
 import fr.maner.aystonediscord.repository.AystoneSanctionRepository
-import fr.maner.aystonediscord.usecase.InstanceCommand
-import fr.maner.aystonediscord.usecase.WhoisCommand
-import fr.maner.aystonediscord.usecase.helper.PaginatedEmbed
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.entities.Activity
@@ -22,8 +22,8 @@ class DiscordClient(
         .setActivity(Activity.playing(botConfig.activity))
         .build()
 
-    private val whoisCmd = WhoisCommand(aystonePlayerRepository, aystoneSanctionRepository)
-    private val instanceCmd = InstanceCommand(aystoneInstanceRepository)
+    private val whoisCmd = WhoisCommand(aystonePlayerRepository, aystoneSanctionRepository, botConfig.rolesId)
+    private val instanceCmd = InstanceCommand(aystoneInstanceRepository, botConfig.rolesId)
 
     init {
         jdaInstance.awaitReady()

@@ -1,15 +1,15 @@
-package fr.maner.aystonediscord.usecase
+package fr.maner.aystonediscord.command
 
 import fr.maner.aystonediscord.api.PlayerDBApi
+import fr.maner.aystonediscord.command.helper.CommandPermission
+import fr.maner.aystonediscord.command.helper.PaginatedEmbed
 import fr.maner.aystonediscord.domain.model.AystonePlayer
 import fr.maner.aystonediscord.domain.model.AystoneSanction
 import fr.maner.aystonediscord.domain.model.KeycloakPlayer
 import fr.maner.aystonediscord.repository.AystonePlayerRepository
 import fr.maner.aystonediscord.repository.AystoneSanctionRepository
-import fr.maner.aystonediscord.usecase.helper.PaginatedEmbed
 import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.EmbedBuilder
-import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.MessageEmbed
 import net.dv8tion.jda.api.entities.emoji.Emoji
 import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent
@@ -18,7 +18,6 @@ import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEven
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.interactions.InteractionContextType
-import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.CommandData
 import net.dv8tion.jda.api.interactions.commands.build.Commands
@@ -33,13 +32,13 @@ import java.util.*
 class WhoisCommand(
     private val aystonePlayerRepository: AystonePlayerRepository,
     private val aystoneSanctionRepository: AystoneSanctionRepository,
+    private val rolesId: List<String>,
 ) : ListenerAdapter() {
 
     companion object {
         const val NAME = "whois"
         const val DESCRIPTION = "Displays information about a player"
         const val CONTEXT_MENU_NAME = "Aystone Player Info"
-        val PERMISSION = Permission.MESSAGE_MANAGE
 
         private const val BUTTON_PREFIX_SANCTION_NOTHING = "whois_sanction_nothing"
         private const val BUTTON_PREFIX_SANCTION_ASK = "whois_sanction_ask"
@@ -59,19 +58,14 @@ class WhoisCommand(
     }
 
     fun createSlashCommand(): SlashCommandData {
-        val baseCommand = Commands.slash(NAME, DESCRIPTION)
-            .setDefaultPermissions(DefaultMemberPermissions.enabledFor(PERMISSION))
-            .setContexts(InteractionContextType.GUILD)
-
+        val baseCommand = Commands.slash(NAME, DESCRIPTION).setContexts(InteractionContextType.GUILD)
         return Options.ALL.fold(baseCommand) { cmd, option ->
             cmd.addOption(option.type, option.name, option.description, false)
         }
     }
 
     fun createContextCommand(): CommandData {
-        return Commands.user(CONTEXT_MENU_NAME)
-            .setDefaultPermissions(DefaultMemberPermissions.enabledFor(PERMISSION))
-            .setContexts(InteractionContextType.GUILD)
+        return Commands.user(CONTEXT_MENU_NAME).setContexts(InteractionContextType.GUILD)
     }
 
     override fun onUserContextInteraction(event: UserContextInteractionEvent) {
@@ -85,6 +79,7 @@ class WhoisCommand(
 
     override fun onSlashCommandInteraction(event: SlashCommandInteractionEvent) {
         if (event.name != NAME) return
+        if (!CommandPermission.hasPermission(event, event.member, rolesId)) return
 
         val providedOptions = Options.ALL.mapNotNull { option ->
             event.getOption(option.name)
@@ -202,12 +197,11 @@ class WhoisCommand(
     override fun onButtonInteraction(event: ButtonInteractionEvent) {
         val componentId = event.componentId
 
-        if (componentId.startsWith(BUTTON_PREFIX_SANCTION_ASK)) {
-            event.member?.hasPermission(PERMISSION)?.let {
-                if (!it) {
-                    event.reply("❌ You do not have permission.").setEphemeral(true).queue()
-                    return
-                }
+        if (componentId.startsWith(BUTTON_PREFIX_SANCTION_SEE)) {
+            PaginatedEmbed.handleUpdatePaginationAndPermission(event, BUTTON_PREFIX_SANCTION_SEE, rolesId)
+        } else if (componentId.startsWith(BUTTON_PREFIX_SANCTION_ASK)) {
+            if (!CommandPermission.hasPermission(event, event.member, rolesId)) {
+                return
             }
 
             val uuidRaw = componentId.substringAfter("$BUTTON_PREFIX_SANCTION_ASK:")
@@ -236,7 +230,6 @@ class WhoisCommand(
             val (embed, buttons) = PaginatedEmbed.handleNewPagination(
                 event, BUTTON_PREFIX_SANCTION_SEE, sanctions,
                 title = "⚖\uFE0F Sanction List: `${mcInfo.username}`", // ⚖️
-                userPermission = PERMISSION,
                 itemsPerPage = 9,
                 fieldBuilder = { i, sanction, embed -> createFieldSanction(sanction, embed) },
                 embedBuilder = {
@@ -249,8 +242,6 @@ class WhoisCommand(
             )
 
             event.replyEmbeds(embed).setActionRow(*buttons.map { it as ItemComponent }.toTypedArray()).queue()
-        } else if (componentId.startsWith(BUTTON_PREFIX_SANCTION_SEE)) {
-            PaginatedEmbed.handleUpdatePagination(event, BUTTON_PREFIX_SANCTION_SEE)
         }
     }
 
