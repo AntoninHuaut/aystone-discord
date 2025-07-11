@@ -1,5 +1,6 @@
 package fr.maner.aystonediscord.boot
 
+import fr.maner.aystonediscord.api.KeycloakAPI
 import fr.maner.aystonediscord.command.InstanceCommand
 import fr.maner.aystonediscord.command.WhoisCommand
 import fr.maner.aystonediscord.command.helper.PaginatedEmbed
@@ -13,6 +14,7 @@ import net.dv8tion.jda.api.entities.Activity
 
 class DiscordClient(
     botConfig: BotConfig,
+    kcClient: KeycloakAPI,
     private val aystoneInstanceRepository: AystoneInstanceRepository,
     private val aystonePlayerRepository: AystonePlayerRepository,
     private val aystoneSanctionRepository: AystoneSanctionRepository,
@@ -22,7 +24,7 @@ class DiscordClient(
         .setActivity(Activity.playing(botConfig.activity))
         .build()
 
-    private val whoisCmd = WhoisCommand(aystonePlayerRepository, aystoneSanctionRepository, botConfig.rolesId)
+    private val whoisCmd = WhoisCommand(kcClient, aystonePlayerRepository, aystoneSanctionRepository, botConfig.rolesId)
     private val instanceCmd = InstanceCommand(aystoneInstanceRepository, botConfig.rolesId)
 
     init {

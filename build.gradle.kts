@@ -20,6 +20,8 @@ dependencies {
     implementation("org.yaml:snakeyaml:2.4")
     implementation("org.slf4j:slf4j-simple:2.0.17")
     implementation("com.google.code.gson:gson:2.13.1")
+    implementation("io.github.oshai:kotlin-logging:7.0.7")
+    implementation("com.squareup.okhttp3:okhttp:5.1.0")
 
     // Database
     implementation("org.postgresql:postgresql:42.7.7")

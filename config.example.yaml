@@ -4,6 +4,17 @@ bot:
   rolesId:
     - "264156076079972374" # AyTeam
     - "264488569450528768" # Modérateurs
+
+keycloak:
+  url: ""
+  realm: "production"
+  clientId: ""
+  username: ""
+  password: ""
+  identities:
+    discord: "discord"
+    twitch: "twitch"
+
 database:
   host: ""
   port: ""

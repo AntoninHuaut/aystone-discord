@@ -1,14 +1,15 @@
 package fr.maner.aystonediscord.command
 
+import fr.maner.aystonediscord.api.KeycloakAPI
 import fr.maner.aystonediscord.api.PlayerDBApi
 import fr.maner.aystonediscord.command.helper.CommandPermission
 import fr.maner.aystonediscord.command.helper.PaginatedEmbed
+import fr.maner.aystonediscord.domain.Identities
 import fr.maner.aystonediscord.domain.model.AystonePlayer
 import fr.maner.aystonediscord.domain.model.AystoneSanction
 import fr.maner.aystonediscord.domain.model.KeycloakPlayer
 import fr.maner.aystonediscord.repository.AystonePlayerRepository
 import fr.maner.aystonediscord.repository.AystoneSanctionRepository
-import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.entities.MessageEmbed
 import net.dv8tion.jda.api.entities.emoji.Emoji
@@ -30,6 +31,7 @@ import java.time.format.DateTimeFormatter
 import java.util.*
 
 class WhoisCommand(
+    private val kcClient: KeycloakAPI,
     private val aystonePlayerRepository: AystonePlayerRepository,
     private val aystoneSanctionRepository: AystoneSanctionRepository,
     private val rolesId: List<String>,
@@ -70,11 +72,15 @@ class WhoisCommand(
 
     override fun onUserContextInteraction(event: UserContextInteractionEvent) {
         if (event.name != CONTEXT_MENU_NAME) return
+        if (!CommandPermission.hasPermission(event, event.member, rolesId)) return
 
-        // TODO get KeycloakPlayer by Discord ID
-        val kPlayer = KeycloakPlayer(event.target.id, UUID.fromString("b5238882-0706-49c2-992d-538ab1b057f6"), "")
+        val discordAlias = kcClient.getIdentitiesMap()[Identities.DISCORD.getIdpAlias()] ?: return
+        val identities = kcClient.getFederatedIdentitiesByIdpId(discordAlias, event.target.id) ?: run {
+            event.reply("❌ No Keycloak Player found for this Discord user.").setEphemeral(true).queue()
+            return
+        }
 
-        displayWhois(event, kPlayer)
+        displayWhois(event, KeycloakPlayer.from(identities))
     }
 
     override fun onSlashCommandInteraction(event: SlashCommandInteractionEvent) {
@@ -110,25 +116,21 @@ class WhoisCommand(
 
                 // TODO get Twitch ID by name
                 // TODO get KeycloakPlayer by ID Twitch
-                return KeycloakPlayer("", UUID.randomUUID(), "")
+                return KeycloakPlayer("", "", UUID.randomUUID(), "", "", "")
             }
 
             Options.MINECRAFT_NAME_UUID.name -> {
                 val mcNameOrUuid = optionValue
 
-                return runBlocking {
-                    try {
-                        val mcInfo = PlayerDBApi.getByNameOrUuid(mcNameOrUuid) ?: throw Exception("not found")
-                        return@runBlocking KeycloakPlayer("", UUID.fromString(mcInfo.id), "")
-                    } catch (e: Exception) {
-                        event.reply("❌ Error while fetching Minecraft Name or UUID `$mcNameOrUuid`: ${e.message}.").setEphemeral(true).queue()
-                        return@runBlocking null
-                    }
+                val mcInfo = PlayerDBApi.getByNameOrUuid(mcNameOrUuid) ?: run {
+                    event.reply("❌ Error while fetching Minecraft Name or UUID `$mcNameOrUuid`.").setEphemeral(true).queue()
+                    return null
                 }
+
+                return KeycloakPlayer("", "", UUID.fromString(mcInfo.id), "", "", "")
             }
 
             else -> return null
-
         }
     }
 
@@ -139,15 +141,10 @@ class WhoisCommand(
             return
         }
 
-        val mcInfo: String = runBlocking {
-            try {
-                val mcInfo = PlayerDBApi.getByNameOrUuid(aPlayer.uuid.toString()) ?: throw Exception("not found")
-                mcInfo.username
-            } catch (e: Exception) {
-                event.reply("❌ Error while fetching Minecraft name for `${aPlayer.uuid}`: ${e.message}.").setEphemeral(true).queue()
-                null
-            }
-        } ?: return
+        val mcInfo = PlayerDBApi.getByNameOrUuid(aPlayer.uuid.toString()) ?: run {
+            event.reply("❌ Error while fetching Minecraft name for `${aPlayer.uuid}`.").setEphemeral(true).queue()
+            return
+        }
 
         val buttons = mutableListOf<Button>()
         val nbSanctions = aystoneSanctionRepository.countByUuid(kPlayer.mcUuid)
@@ -168,7 +165,7 @@ class WhoisCommand(
             )
         }
 
-        event.replyEmbeds(toEmbed(aPlayer, kPlayer, mcInfo)).setActionRow(*buttons.map { it as ItemComponent }.toTypedArray()).queue()
+        event.replyEmbeds(toEmbed(aPlayer, kPlayer, mcInfo.username)).setActionRow(*buttons.map { it as ItemComponent }.toTypedArray()).queue()
     }
 
     fun toEmbed(aPlayer: AystonePlayer, kPlayer: KeycloakPlayer, mcName: String): MessageEmbed {
@@ -189,8 +186,8 @@ class WhoisCommand(
             .addField("Last Login", aPlayer.lastLogin.format(DATE_FORMATTER), true)
             .addField("\u200B", "\u200B", true) // Empty field for spacing
 
-            .addField("Twitch", "TBD Twitch Name (`${kPlayer.twitchId}`)", true)
-            .addField("Discord", "TBD Discord Name (`${kPlayer.discordId}`)", true)
+            .addField("Twitch", "`${kPlayer.twitchName}` (`${kPlayer.twitchId}`)", true)
+            .addField("Discord", "`${kPlayer.discordName}` (`${kPlayer.discordId}`)", true)
             .build()
     }
 
@@ -218,14 +215,10 @@ class WhoisCommand(
                 return
             }
 
-            val mcInfo: PlayerDBApi.PlayerInfo = runBlocking {
-                try {
-                    return@runBlocking PlayerDBApi.getByNameOrUuid(uuid.toString())
-                } catch (e: Exception) {
-                    event.reply("❌ Error while fetching Minecraft name for `$uuid`: ${e.message}.").setEphemeral(true).queue()
-                    return@runBlocking null
-                }
-            } ?: return
+            val mcInfo = PlayerDBApi.getByNameOrUuid(uuid.toString()) ?: run {
+                event.reply("❌ Error while fetching Minecraft name for `$uuid`}.").setEphemeral(true).queue()
+                return
+            }
 
             val (embed, buttons) = PaginatedEmbed.handleNewPagination(
                 event, BUTTON_PREFIX_SANCTION_SEE, sanctions,

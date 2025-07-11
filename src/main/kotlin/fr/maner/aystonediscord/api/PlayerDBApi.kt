@@ -1,18 +1,17 @@
 package fr.maner.aystonediscord.api
 
 import com.google.gson.Gson
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.net.HttpURLConnection
-import java.net.URI
+import com.google.gson.annotations.SerializedName
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 object PlayerDBApi {
 
-    private const val MINECRAFT_URL = "https://playerdb.co/api/player/minecraft/"
-    private const val TIMEOUT = 5000
+    private val logger = KotlinLogging.logger {}
     private val gson = Gson()
+
+    private const val MINECRAFT_URL = "https://playerdb.co/api/player/minecraft/"
 
     private data class PlayerDBResponse(
         val code: String,
@@ -28,40 +27,23 @@ object PlayerDBApi {
     private data class Player(
         val username: String,
         val id: String,
-        val raw_id: String
+        @SerializedName("raw_id")
+        val rawId: String
     )
 
     data class PlayerInfo(val username: String, val id: String, val rawId: String)
 
-    suspend fun getByNameOrUuid(param: String): PlayerInfo? = withContext(Dispatchers.IO) {
+    fun getByNameOrUuid(param: String): PlayerInfo? {
         val encodedParam = URLEncoder.encode(param, StandardCharsets.UTF_8)
         val url = "$MINECRAFT_URL$encodedParam"
 
-        makeApiRequest<PlayerInfo>(url) { response ->
-            with(response.data.player) {
-                PlayerInfo(username, id, raw_id)
+        try {
+            return gson.fromJson(HttpAPI.get(url), PlayerDBResponse::class.java)?.let { response ->
+                PlayerInfo(response.data.player.username, response.data.player.id, response.data.player.rawId)
             }
-        }
-    }
-
-    private inline fun <T> makeApiRequest(
-        url: String,
-        transform: (PlayerDBResponse) -> T?
-    ): T? {
-        val connection = URI.create(url).toURL().openConnection() as HttpURLConnection
-
-        connection.apply {
-            requestMethod = "GET"
-            connectTimeout = TIMEOUT
-            readTimeout = TIMEOUT
-        }
-
-        if (connection.responseCode != HttpURLConnection.HTTP_OK) {
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch player info for '$param' from PlayerDB API." }
             return null
-        }
-
-        return connection.inputStream.bufferedReader().use { reader ->
-            gson.fromJson(reader, PlayerDBResponse::class.java)?.let(transform)
         }
     }
 }
