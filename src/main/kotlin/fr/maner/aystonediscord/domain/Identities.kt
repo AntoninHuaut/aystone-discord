@@ -1,10 +1,10 @@
 package fr.maner.aystonediscord.domain
 
-enum class Identities(private val idpAlias: String) {
+enum class Identities(private val type: String) {
     DISCORD("discord"),
     TWITCH("twitch");
 
-    fun getIdpAlias(): String {
-        return idpAlias
+    fun getIdpAlias(identities: Map<String, String>): String? {
+        return identities[type]
     }
 }

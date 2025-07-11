@@ -78,8 +78,8 @@ class KeycloakAPI(private val kcConfig: KeycloakConfig) {
             val content = makeApiRequest(url, "GET") ?: return null
             val identities = gson.fromJson<List<UserFederatedIdentifyResponse>>(content, type) ?: return null
 
-            val discordIdentity = kcConfig.identities[Identities.DISCORD.getIdpAlias()] ?: return null
-            val twitchIdentity = kcConfig.identities[Identities.TWITCH.getIdpAlias()] ?: return null
+            val discordIdentity = Identities.DISCORD.getIdpAlias(kcConfig.identities) ?: return null
+            val twitchIdentity = Identities.TWITCH.getIdpAlias(kcConfig.identities) ?: return null
 
             val discord = identities.find { it.identityProvider == discordIdentity }
             val twitch = identities.find { it.identityProvider == twitchIdentity }

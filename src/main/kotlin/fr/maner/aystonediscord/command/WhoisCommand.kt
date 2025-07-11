@@ -74,9 +74,9 @@ class WhoisCommand(
         if (event.name != CONTEXT_MENU_NAME) return
         if (!CommandPermission.hasPermission(event, event.member, rolesId)) return
 
-        val discordAlias = kcClient.getIdentitiesMap()[Identities.DISCORD.getIdpAlias()] ?: return
+        val discordAlias = Identities.DISCORD.getIdpAlias(kcClient.getIdentitiesMap()) ?: return
         val identities = kcClient.getFederatedIdentitiesByIdpId(discordAlias, event.target.id) ?: run {
-            event.reply("❌ No Keycloak Player found for this Discord user.").setEphemeral(true).queue()
+            event.reply("❌ No Keycloak Player found for `${event.target.globalName}`.").setEphemeral(true).queue()
             return
         }
 
@@ -112,11 +112,22 @@ class WhoisCommand(
     fun getKeycloakPlayerByOption(event: GenericCommandInteractionEvent, optionName: String, optionValue: String): KeycloakPlayer? {
         when (optionName) {
             Options.TWITCH_ID_NAME.name -> {
-                val twitchIdOrName = optionValue
+                val isOnlyNumerical = optionValue.all { it.isDigit() }
 
-                // TODO get Twitch ID by name
-                // TODO get KeycloakPlayer by ID Twitch
-                return KeycloakPlayer("", "", UUID.randomUUID(), "", "", "")
+                val identities = if (isOnlyNumerical) {
+                    // As twitch id
+                    val idpAlias = Identities.TWITCH.getIdpAlias(kcClient.getIdentitiesMap()) ?: return null
+                    kcClient.getFederatedIdentitiesByIdpId(idpAlias, optionValue)
+                } else {
+                    // As twitch name
+                    // Otherwise, we assume it's a Twitch name
+                    TODO()     // TODO get Twitch ID by name
+                } ?: run {
+                    event.reply("❌ No Keycloak Player found for `$optionValue`.").setEphemeral(true).queue()
+                    return null
+                }
+
+                return KeycloakPlayer.from(identities)
             }
 
             Options.MINECRAFT_NAME_UUID.name -> {
