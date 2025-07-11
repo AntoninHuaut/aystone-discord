@@ -30,7 +30,7 @@ class KeycloakPlayerResolver(
             optionValue = optionValue,
             identity = Identities.DISCORD,
             resolveNameToId = { name ->
-                event.guild?.getMembersByName(name, true)?.firstOrNull()?.id
+                jda.getUsersByName(name, true).firstOrNull()?.id
             }
         )
     }
