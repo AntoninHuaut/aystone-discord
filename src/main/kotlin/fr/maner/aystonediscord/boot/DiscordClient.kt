@@ -12,6 +12,9 @@ import fr.maner.aystonediscord.repository.AystoneSanctionRepository
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.entities.Activity
+import net.dv8tion.jda.api.requests.GatewayIntent
+import net.dv8tion.jda.api.utils.ChunkingFilter
+import net.dv8tion.jda.api.utils.MemberCachePolicy
 
 class DiscordClient(
     botConfig: BotConfig,
@@ -23,6 +26,9 @@ class DiscordClient(
 ) {
 
     private val jdaInstance: JDA = JDABuilder.createDefault(botConfig.token)
+        .enableIntents(GatewayIntent.GUILD_MEMBERS)
+        .setChunkingFilter(ChunkingFilter.ALL)
+        .setMemberCachePolicy(MemberCachePolicy.ALL)
         .setActivity(Activity.playing(botConfig.activity))
         .build()
 

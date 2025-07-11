@@ -30,7 +30,7 @@ class KeycloakPlayerResolver(
             optionValue = optionValue,
             identity = Identities.DISCORD,
             resolveNameToId = { name ->
-                jda.getUsersByName(name, true).firstOrNull()?.id
+                event.guild?.getMembersByName(name, true)?.firstOrNull()?.id
             }
         )
     }
@@ -44,7 +44,7 @@ class KeycloakPlayerResolver(
         // TODO get KC
         return KeycloakPlayer("", "", UUID.fromString(mcInfo.id), "", "", "")
     }
-    
+
     private fun resolveByTwitch(event: GenericCommandInteractionEvent, optionValue: String): KeycloakPlayer? {
         return resolveByIdentityProvider(
             event = event,
@@ -69,7 +69,7 @@ class KeycloakPlayerResolver(
             optionValue
         } else {
             resolveNameToId(optionValue) ?: run {
-                event.replyError("Error while fetching ${identity.name} ID `$optionValue`.")
+                event.replyError("Error while fetching ${identity.getType()} ID `$optionValue`.")
                 return null
             }
         }
