@@ -26,7 +26,7 @@ class DiscordClient(
         .setActivity(Activity.playing(botConfig.activity))
         .build()
 
-    private val whoisCmd = WhoisCommand(kcClient, twClient, aystonePlayerRepository, aystoneSanctionRepository, botConfig.rolesId)
+    private val whoisCmd = WhoisCommand(jdaInstance, kcClient, twClient, aystonePlayerRepository, aystoneSanctionRepository, botConfig.rolesId)
     private val instanceCmd = InstanceCommand(aystoneInstanceRepository, botConfig.rolesId)
 
     init {

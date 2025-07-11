@@ -1,10 +1,9 @@
 package fr.maner.aystonediscord.command
 
 import fr.maner.aystonediscord.command.helper.CommandPermission
+import fr.maner.aystonediscord.command.helper.EmbedBuilder
 import fr.maner.aystonediscord.command.helper.PaginatedEmbed
-import fr.maner.aystonediscord.domain.model.AystoneInstance
 import fr.maner.aystonediscord.repository.AystoneInstanceRepository
-import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
@@ -50,7 +49,11 @@ class InstanceCommand(
         }
     }
 
-    fun listInstances(event: SlashCommandInteractionEvent) {
+    override fun onButtonInteraction(event: ButtonInteractionEvent) {
+        PaginatedEmbed.handleUpdatePaginationAndPermission(event, BUTTON_PREFIX, rolesId)
+    }
+
+    private fun listInstances(event: SlashCommandInteractionEvent) {
         val instances = aystoneInstanceRepository.getAll()
         if (instances.isEmpty()) {
             event.reply("❌ No instances found.").setEphemeral(true).queue()
@@ -61,26 +64,9 @@ class InstanceCommand(
             event, BUTTON_PREFIX, instances,
             title = "\uD83D\uDCCB Instance List", // 📋
             itemsPerPage = 9,
-            fieldBuilder = { i, sanction, embed -> createFieldInstance(sanction, embed) },
+            fieldBuilder = { i, sanction, embed -> EmbedBuilder.buildInstanceField(sanction, embed) },
         )
 
         event.replyEmbeds(embed).setActionRow(*buttons.map { it as ItemComponent }.toTypedArray()).queue()
-    }
-
-
-    override fun onButtonInteraction(event: ButtonInteractionEvent) {
-        PaginatedEmbed.handleUpdatePaginationAndPermission(event, BUTTON_PREFIX, rolesId)
-    }
-
-    fun createFieldInstance(instance: AystoneInstance, embed: EmbedBuilder): EmbedBuilder {
-        return embed.addField(
-            instance.name,
-            listOf(
-                "Max players: ${instance.maxPlayer}",
-                if (instance.enabled) "✅ Enabled" else "❌ Disabled",
-                if (instance.visible) "✅ Visible" else "❌ Invisible",
-            ).joinToString("\n"),
-            true
-        )
     }
 }
