@@ -20,7 +20,7 @@ class KeycloakAPI(private val kcConfig: KeycloakConfig) {
 
     data class UserResponse(val id: String, val username: String, val email: String?)
 
-    data class AuthResponse(
+    private data class AuthResponse(
         @SerializedName("access_token") val accessToken: String,
         @SerializedName("expires_in") val accessExpiresIn: Int,
         @Transient val date: Instant,
@@ -54,7 +54,7 @@ class KeycloakAPI(private val kcConfig: KeycloakConfig) {
         val type = object : TypeToken<List<UserResponse>>() {}.type
 
         try {
-            val content = makeApiRequest(url, "GET") ?: return null
+            val content = getAuth(url) ?: return null
             val users = gson.fromJson<List<UserResponse>>(content, type) ?: return null
 
             if (users.isEmpty()) {
@@ -75,7 +75,7 @@ class KeycloakAPI(private val kcConfig: KeycloakConfig) {
         val type = object : TypeToken<List<UserFederatedIdentifyResponse>>() {}.type
 
         try {
-            val content = makeApiRequest(url, "GET") ?: return null
+            val content = getAuth(url) ?: return null
             val identities = gson.fromJson<List<UserFederatedIdentifyResponse>>(content, type) ?: return null
 
             val discordIdentity = Identities.DISCORD.getIdpAlias(kcConfig.identities) ?: return null
@@ -107,7 +107,7 @@ class KeycloakAPI(private val kcConfig: KeycloakConfig) {
         return gson.fromJson(content, AuthResponse::class.java).copy(date = Instant.now())
     }
 
-    fun makeApiRequest(url: String, method: String): String? {
+    private fun getAuth(url: String): String? {
         val authResponse = run {
             try {
                 if (previousAuthResponse == null || Instant.now()

@@ -10,11 +10,15 @@ object HttpAPI {
     private val client = OkHttpClient()
 
     @Throws(IOException::class)
-    fun get(url: String, bearerToken: String? = null): String {
+    fun get(url: String, bearerToken: String? = null, additionalHeaders: Map<String, String> = mapOf()): String {
         val request = Request.Builder().url(url)
 
         bearerToken?.let {
             request.addHeader("Authorization", "Bearer $it")
+        }
+
+        additionalHeaders.forEach { (key, value) ->
+            request.addHeader(key, value)
         }
 
         client.newCall(request.build()).execute().use { response ->

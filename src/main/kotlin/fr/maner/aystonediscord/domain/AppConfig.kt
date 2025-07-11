@@ -1,9 +1,10 @@
 package fr.maner.aystonediscord.domain
 
 data class AppConfig(
-    var bot: BotConfig = BotConfig(""),
-    var keycloak: KeycloakConfig = KeycloakConfig(""),
-    var database: DatabaseConfig = DatabaseConfig(""),
+    var bot: BotConfig = BotConfig(),
+    var keycloak: KeycloakConfig = KeycloakConfig(),
+    var twitch: TwitchConfig = TwitchConfig(),
+    var database: DatabaseConfig = DatabaseConfig(),
 )
 
 data class BotConfig(
@@ -19,6 +20,13 @@ data class KeycloakConfig(
     var username: String = "",
     var password: String = "",
     var identities: Map<String, String> = emptyMap(),
+)
+
+data class TwitchConfig(
+    var apiUrl: String = "",
+    var tokenUrl: String = "",
+    var clientId: String = "",
+    var clientSecret: String = "",
 )
 
 data class DatabaseConfig(

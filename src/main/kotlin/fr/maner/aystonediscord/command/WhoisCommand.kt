@@ -2,6 +2,7 @@ package fr.maner.aystonediscord.command
 
 import fr.maner.aystonediscord.api.KeycloakAPI
 import fr.maner.aystonediscord.api.PlayerDBApi
+import fr.maner.aystonediscord.api.TwitchAPI
 import fr.maner.aystonediscord.command.helper.CommandPermission
 import fr.maner.aystonediscord.command.helper.PaginatedEmbed
 import fr.maner.aystonediscord.domain.Identities
@@ -32,6 +33,7 @@ import java.util.*
 
 class WhoisCommand(
     private val kcClient: KeycloakAPI,
+    private val twClient: TwitchAPI,
     private val aystonePlayerRepository: AystonePlayerRepository,
     private val aystoneSanctionRepository: AystoneSanctionRepository,
     private val rolesId: List<String>,
@@ -114,14 +116,19 @@ class WhoisCommand(
             Options.TWITCH_ID_NAME.name -> {
                 val isOnlyNumerical = optionValue.all { it.isDigit() }
 
+                val idpAlias = Identities.TWITCH.getIdpAlias(kcClient.getIdentitiesMap()) ?: return null
+
                 val identities = if (isOnlyNumerical) {
                     // As twitch id
-                    val idpAlias = Identities.TWITCH.getIdpAlias(kcClient.getIdentitiesMap()) ?: return null
                     kcClient.getFederatedIdentitiesByIdpId(idpAlias, optionValue)
                 } else {
                     // As twitch name
-                    // Otherwise, we assume it's a Twitch name
-                    TODO()     // TODO get Twitch ID by name
+                    val twitchId = twClient.getUserId(optionValue) ?: run {
+                        event.reply("❌ Error while fetching Twitch ID `$optionValue`.").setEphemeral(true).queue()
+                        return null
+                    }
+
+                    kcClient.getFederatedIdentitiesByIdpId(idpAlias, twitchId)
                 } ?: run {
                     event.reply("❌ No Keycloak Player found for `$optionValue`.").setEphemeral(true).queue()
                     return null
@@ -138,6 +145,7 @@ class WhoisCommand(
                     return null
                 }
 
+                // TODO get KC
                 return KeycloakPlayer("", "", UUID.fromString(mcInfo.id), "", "", "")
             }
 

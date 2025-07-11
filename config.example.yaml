@@ -15,6 +15,12 @@ keycloak:
     discord: "discord"
     twitch: "twitch"
 
+twitch:
+  apiUrl: "https://api.twitch.tv/helix"
+  tokenUrl: "https://id.twitch.tv/oauth2/token"
+  clientId: ""
+  clientSecret: ""
+
 database:
   host: ""
   port: ""
