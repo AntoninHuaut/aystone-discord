@@ -32,12 +32,7 @@ class AystoneAPI(private val ayConfig: AystoneConfig) {
         val url = "${ayConfig.url}/user?$params"
 
         try {
-            return UserIdentitiesResponse(
-                twitch = UserIdentityResponse("001", "maner__"),
-                discord = UserIdentityResponse("001", "maner_"),
-                microsoft = UserIdentityResponse(UUID.randomUUID(), "Maner_")
-            )
-//            return gson.fromJson(HttpAPI.get(url, ayConfig.token), UserIdentitiesResponse::class.java)
+            return gson.fromJson(HttpAPI.get(url, ayConfig.token), UserIdentitiesResponse::class.java)
         } catch (e: Exception) {
             logger.error(e) { "Failed to fetch user ID for idpAlias '$idpSource' and idpUserId '$idpUserId' from Aypi." }
             return null
