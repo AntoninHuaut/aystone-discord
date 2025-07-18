@@ -1,40 +1,39 @@
 package fr.maner.aystonediscord.command.helper
 
-import fr.maner.aystonediscord.api.KeycloakAPI
+import fr.maner.aystonediscord.api.AystoneAPI
 import fr.maner.aystonediscord.api.PlayerDBApi
 import fr.maner.aystonediscord.api.TwitchAPI
 import fr.maner.aystonediscord.command.AbstractCommand
 import fr.maner.aystonediscord.domain.Identities
-import fr.maner.aystonediscord.domain.model.KeycloakPlayer
+import fr.maner.aystonediscord.domain.model.AypiPlayer
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.OptionType
-import java.util.*
 
-class KeycloakPlayerResolver(
+class AystonePlayerResolver(
     private val jda: JDA,
-    private val kcClient: KeycloakAPI,
+    private val kcClient: AystoneAPI,
     private val twClient: TwitchAPI
 ) {
 
     companion object {
         val defaultResolverOptions = listOf(
             AbstractCommand.Option(Identities.DISCORD.getType(), "Discord id or name", OptionType.STRING),
-            AbstractCommand.Option(Identities.MINECRAFT.getType(), "Minecraft name or uuid", OptionType.STRING),
+            AbstractCommand.Option(Identities.MICROSOFT.getType(), "Minecraft name or uuid", OptionType.STRING),
             AbstractCommand.Option(Identities.TWITCH.getType(), "Twitch id or name", OptionType.STRING),
         )
     }
 
-    fun resolve(event: GenericCommandInteractionEvent, optionName: String, optionValue: String): KeycloakPlayer? {
+    fun resolve(event: GenericCommandInteractionEvent, optionName: String, optionValue: String): AypiPlayer? {
         return when (optionName) {
             Identities.DISCORD.getType() -> resolveByDiscord(event, optionValue)
-            Identities.MINECRAFT.getType() -> resolveByMinecraft(event, optionValue)
+            Identities.MICROSOFT.getType() -> resolveByMinecraft(event, optionValue)
             Identities.TWITCH.getType() -> resolveByTwitch(event, optionValue)
             else -> null
         }
     }
 
-    private fun resolveByDiscord(event: GenericCommandInteractionEvent, optionValue: String): KeycloakPlayer? {
+    private fun resolveByDiscord(event: GenericCommandInteractionEvent, optionValue: String): AypiPlayer? {
         return resolveByIdentityProvider(
             event = event,
             optionValue = optionValue,
@@ -45,17 +44,18 @@ class KeycloakPlayerResolver(
         )
     }
 
-    private fun resolveByMinecraft(event: GenericCommandInteractionEvent, optionValue: String): KeycloakPlayer? {
-        val mcInfo = PlayerDBApi.getByNameOrUuid(optionValue) ?: run {
-            event.replyError("Error while fetching Minecraft Name or UUID `$optionValue`.")
-            return null
-        }
-
-        // TODO get KC
-        return KeycloakPlayer("", "", UUID.fromString(mcInfo.id), "", "", "")
+    private fun resolveByMinecraft(event: GenericCommandInteractionEvent, optionValue: String): AypiPlayer? {
+        return resolveByIdentityProvider(
+            event = event,
+            optionValue = optionValue,
+            identity = Identities.MICROSOFT,
+            resolveNameToId = { name ->
+                PlayerDBApi.getByNameOrUuid(optionValue)?.id
+            }
+        )
     }
 
-    private fun resolveByTwitch(event: GenericCommandInteractionEvent, optionValue: String): KeycloakPlayer? {
+    private fun resolveByTwitch(event: GenericCommandInteractionEvent, optionValue: String): AypiPlayer? {
         return resolveByIdentityProvider(
             event = event,
             optionValue = optionValue,
@@ -71,10 +71,7 @@ class KeycloakPlayerResolver(
         optionValue: String,
         identity: Identities,
         resolveNameToId: (String) -> String?
-    ): KeycloakPlayer? {
-        val idpAlias = identity.getIdpAlias(kcClient.getIdentitiesMap())
-            ?: return null
-
+    ): AypiPlayer? {
         val identityId = if (optionValue.isOnlyDigits()) {
             optionValue
         } else {
@@ -84,12 +81,12 @@ class KeycloakPlayerResolver(
             }
         }
 
-        val identities = kcClient.getFederatedIdentitiesByIdpId(idpAlias, identityId) ?: run {
-            event.replyError("No Keycloak Player found for `$optionValue`.")
+        val identities = kcClient.getUserByIdpId(identity.getType(), identityId) ?: run {
+            event.replyError("No AypiPlayer found for `$optionValue`.")
             return null
         }
 
-        return KeycloakPlayer.from(identities)
+        return AypiPlayer.from(identities)
     }
 
     private fun String.isOnlyDigits(): Boolean = this.all { it.isDigit() }

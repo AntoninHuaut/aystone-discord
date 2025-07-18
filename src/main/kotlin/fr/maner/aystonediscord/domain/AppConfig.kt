@@ -2,7 +2,7 @@ package fr.maner.aystonediscord.domain
 
 data class AppConfig(
     var bot: BotConfig = BotConfig(),
-    var keycloak: KeycloakConfig = KeycloakConfig(),
+    var aystone: AystoneConfig = AystoneConfig(),
     var twitch: TwitchConfig = TwitchConfig(),
     var database: DatabaseConfig = DatabaseConfig(),
 )
@@ -13,13 +13,9 @@ data class BotConfig(
     var rolesId: List<String> = emptyList(),
 )
 
-data class KeycloakConfig(
+data class AystoneConfig(
     var url: String = "",
-    var realm: String = "",
-    var clientId: String = "",
-    var username: String = "",
-    var password: String = "",
-    var identities: Map<String, String> = emptyMap(),
+    var token: String = "",
 )
 
 data class TwitchConfig(

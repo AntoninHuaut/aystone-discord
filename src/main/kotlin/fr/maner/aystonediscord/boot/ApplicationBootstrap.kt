@@ -1,6 +1,6 @@
 package fr.maner.aystonediscord.boot
 
-import fr.maner.aystonediscord.api.KeycloakAPI
+import fr.maner.aystonediscord.api.AystoneAPI
 import fr.maner.aystonediscord.api.TwitchAPI
 import fr.maner.aystonediscord.repository.AystoneInstanceRepository
 import fr.maner.aystonediscord.repository.AystonePlayerRepository
@@ -14,7 +14,7 @@ class ApplicationBootstrap {
 
             val dbConnection = DatabaseConnection(config.database)
 
-            val kcClient = KeycloakAPI(config.keycloak)
+            val kcClient = AystoneAPI(config.aystone)
             val twClient = TwitchAPI(config.twitch)
 
             val discordClient = DiscordClient(

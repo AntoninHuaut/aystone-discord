@@ -1,38 +1,35 @@
 package fr.maner.aystonediscord.command
 
-import fr.maner.aystonediscord.api.KeycloakAPI
+import fr.maner.aystonediscord.api.AystoneAPI
 import fr.maner.aystonediscord.api.TwitchAPI
-import fr.maner.aystonediscord.command.helper.KeycloakPlayerResolver
+import fr.maner.aystonediscord.command.helper.AystonePlayerResolver
 import fr.maner.aystonediscord.command.helper.SanctionButtonHandler
 import fr.maner.aystonediscord.domain.Identities
-import fr.maner.aystonediscord.domain.model.KeycloakPlayer
-import fr.maner.aystonediscord.repository.AystoneSanctionRepository
+import fr.maner.aystonediscord.domain.model.AypiPlayer
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent
 
 class RecordCommand(
-    private val jda: JDA,
-    private val kcClient: KeycloakAPI,
+    jda: JDA,
+    private val kcClient: AystoneAPI,
     private val sanctionButtonHandler: SanctionButtonHandler,
     twClient: TwitchAPI,
-    aystoneSanctionRepository: AystoneSanctionRepository,
     rolesId: List<String>,
 ) : AbstractCommand(
-    "record", "Displays records about a player", KeycloakPlayerResolver.defaultResolverOptions,
+    "record", "Displays records about a player", AystonePlayerResolver.defaultResolverOptions,
     "Aystone Player Records", rolesId
 ) {
 
-    private val keycloakPlayerResolver = KeycloakPlayerResolver(jda, kcClient, twClient)
+    private val aystonePlayerResolver = AystonePlayerResolver(jda, kcClient, twClient)
 
     override fun onUserContextInteractionAfterPermission(event: UserContextInteractionEvent) {
-        val discordAlias = Identities.DISCORD.getIdpAlias(kcClient.getIdentitiesMap()) ?: return
-        val identities = kcClient.getFederatedIdentitiesByIdpId(discordAlias, event.target.id) ?: run {
-            event.reply("❌ No Keycloak Player found for `${event.target.globalName}`.").setEphemeral(true).queue()
+        val identities = kcClient.getUserByIdpId(Identities.DISCORD.getType(), event.target.id) ?: run {
+            event.reply("❌ No AypiPlayer found for `${event.target.globalName}`.").setEphemeral(true).queue()
             return
         }
 
-        sanctionButtonHandler.sendRecordsPlayerUUID(event, KeycloakPlayer.from(identities).mcUuid)
+        sanctionButtonHandler.sendRecordsPlayerUUID(event, AypiPlayer.from(identities).mcUuid)
     }
 
     override fun onSlashCommandInteractionAfterPermission(event: SlashCommandInteractionEvent) {
@@ -48,7 +45,7 @@ class RecordCommand(
 
             1 -> {
                 val option = providedOptions.first()
-                val kPlayer = keycloakPlayerResolver.resolve(event, option.name, option.asString) ?: return
+                val kPlayer = aystonePlayerResolver.resolve(event, option.name, option.asString) ?: return
                 sanctionButtonHandler.sendRecordsPlayerUUID(event, kPlayer.mcUuid)
             }
 

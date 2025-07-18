@@ -5,15 +5,9 @@ bot:
     - "264156076079972374" # AyTeam
     - "264488569450528768" # Modérateurs
 
-keycloak:
+aystone:
   url: ""
-  realm: "production"
-  clientId: ""
-  username: ""
-  password: ""
-  identities:
-    discord: "discord"
-    twitch: "twitch"
+  token: ""
 
 twitch:
   apiUrl: "https://api.twitch.tv/helix"

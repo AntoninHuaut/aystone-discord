@@ -1,9 +1,9 @@
 package fr.maner.aystonediscord.command.helper
 
+import fr.maner.aystonediscord.domain.model.AypiPlayer
 import fr.maner.aystonediscord.domain.model.AystoneInstance
 import fr.maner.aystonediscord.domain.model.AystonePlayer
 import fr.maner.aystonediscord.domain.model.AystoneSanction
-import fr.maner.aystonediscord.domain.model.KeycloakPlayer
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.entities.MessageEmbed
 import java.awt.Color
@@ -17,7 +17,7 @@ object EmbedBuilder {
     private val DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", Locale.FRENCH)
     private val EMBED_COLOR = Color(0x1ABC9C)
 
-    fun buildPlayerInfoEmbed(aPlayer: AystonePlayer, kPlayer: KeycloakPlayer, mcName: String): MessageEmbed {
+    fun buildPlayerInfoEmbed(aPlayer: AystonePlayer, kPlayer: AypiPlayer, mcName: String): MessageEmbed {
         return EmbedBuilder()
             .setColor(EMBED_COLOR)
             .setFooter("Aystone", null)

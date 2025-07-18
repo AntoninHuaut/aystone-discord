@@ -1,6 +1,6 @@
 package fr.maner.aystonediscord.boot
 
-import fr.maner.aystonediscord.api.KeycloakAPI
+import fr.maner.aystonediscord.api.AystoneAPI
 import fr.maner.aystonediscord.api.TwitchAPI
 import fr.maner.aystonediscord.command.InstanceCommand
 import fr.maner.aystonediscord.command.RecordCommand
@@ -20,11 +20,11 @@ import net.dv8tion.jda.api.utils.MemberCachePolicy
 
 class DiscordClient(
     botConfig: BotConfig,
-    kcClient: KeycloakAPI,
+    kcClient: AystoneAPI,
     twClient: TwitchAPI,
-    private val aInstanceRepo: AystoneInstanceRepository,
-    private val aPlayerRepo: AystonePlayerRepository,
-    private val aSanctionRepo: AystoneSanctionRepository,
+    aInstanceRepo: AystoneInstanceRepository,
+    aPlayerRepo: AystonePlayerRepository,
+    aSanctionRepo: AystoneSanctionRepository,
 ) {
 
     private val jdaInstance: JDA = JDABuilder.createDefault(botConfig.token)
@@ -36,8 +36,8 @@ class DiscordClient(
 
     private val sanctionButtonHandler = SanctionButtonHandler(aSanctionRepo, botConfig.rolesId)
     private val whoisCmd =
-        WhoisCommand(jdaInstance, kcClient, aPlayerRepo, sanctionButtonHandler, twClient, aSanctionRepo, botConfig.rolesId)
-    private val recordCmd = RecordCommand(jdaInstance, kcClient, sanctionButtonHandler, twClient, aSanctionRepo, botConfig.rolesId)
+        WhoisCommand(jdaInstance, kcClient, aPlayerRepo, sanctionButtonHandler, twClient, botConfig.rolesId)
+    private val recordCmd = RecordCommand(jdaInstance, kcClient, sanctionButtonHandler, twClient, botConfig.rolesId)
     private val instanceCmd = InstanceCommand(aInstanceRepo, botConfig.rolesId)
 
     init {
