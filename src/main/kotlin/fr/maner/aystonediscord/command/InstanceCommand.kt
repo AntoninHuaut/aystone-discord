@@ -1,22 +1,24 @@
 package fr.maner.aystonediscord.command
 
-import fr.maner.aystonediscord.command.helper.CommandPermission
 import fr.maner.aystonediscord.command.helper.EmbedBuilder
 import fr.maner.aystonediscord.command.helper.PaginatedEmbed
 import fr.maner.aystonediscord.repository.AystoneInstanceRepository
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
+import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent
-import net.dv8tion.jda.api.hooks.ListenerAdapter
-import net.dv8tion.jda.api.interactions.InteractionContextType
-import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData
 import net.dv8tion.jda.api.interactions.components.ItemComponent
 
 class InstanceCommand(
     private val aystoneInstanceRepository: AystoneInstanceRepository,
-    private val rolesId: List<String>,
-) : ListenerAdapter() {
+    rolesId: List<String>,
+) : AbstractCommand(
+    "instance", "Instance command",
+    listOf(),
+    null,
+    rolesId
+) {
 
     companion object {
         const val NAME = "instance"
@@ -28,16 +30,15 @@ class InstanceCommand(
         private const val BUTTON_PREFIX = "instance_list"
     }
 
-    fun createCommand(): SlashCommandData {
-        return Commands.slash(NAME, DESCRIPTION)
-            .setContexts(InteractionContextType.GUILD)
-            .addSubcommands(SubcommandData(LIST_NAME, LIST_DESCRIPTION))
+    override fun extendSlashCommand(slashCommand: SlashCommandData): SlashCommandData {
+        return slashCommand.addSubcommands(SubcommandData(LIST_NAME, LIST_DESCRIPTION))
     }
 
-    override fun onSlashCommandInteraction(event: SlashCommandInteractionEvent) {
-        if (event.name != NAME) return
-        if (!CommandPermission.hasPermission(event, event.member, rolesId)) return
-
+    override fun onUserContextInteractionAfterPermission(event: UserContextInteractionEvent) {
+        return
+    }
+    
+    override fun onSlashCommandInteractionAfterPermission(event: SlashCommandInteractionEvent) {
         when (event.subcommandName) {
             LIST_NAME -> {
                 listInstances(event)

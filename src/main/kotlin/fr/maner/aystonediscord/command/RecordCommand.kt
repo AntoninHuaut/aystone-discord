@@ -1,32 +1,26 @@
 package fr.maner.aystonediscord.command
 
 import fr.maner.aystonediscord.api.KeycloakAPI
-import fr.maner.aystonediscord.api.PlayerDBApi
 import fr.maner.aystonediscord.api.TwitchAPI
-import fr.maner.aystonediscord.command.helper.EmbedBuilder
 import fr.maner.aystonediscord.command.helper.KeycloakPlayerResolver
 import fr.maner.aystonediscord.command.helper.SanctionButtonHandler
 import fr.maner.aystonediscord.domain.Identities
 import fr.maner.aystonediscord.domain.model.KeycloakPlayer
-import fr.maner.aystonediscord.repository.AystonePlayerRepository
 import fr.maner.aystonediscord.repository.AystoneSanctionRepository
 import net.dv8tion.jda.api.JDA
-import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent
-import net.dv8tion.jda.api.interactions.components.ItemComponent
 
-class WhoisCommand(
+class RecordCommand(
     private val jda: JDA,
     private val kcClient: KeycloakAPI,
-    private val aystonePlayerRepository: AystonePlayerRepository,
     private val sanctionButtonHandler: SanctionButtonHandler,
     twClient: TwitchAPI,
     aystoneSanctionRepository: AystoneSanctionRepository,
     rolesId: List<String>,
 ) : AbstractCommand(
-    "whois", "Displays information about a player", KeycloakPlayerResolver.defaultResolverOptions,
-    "Aystone Player Info", rolesId
+    "record", "Displays records about a player", KeycloakPlayerResolver.defaultResolverOptions,
+    "Aystone Player Records", rolesId
 ) {
 
     private val keycloakPlayerResolver = KeycloakPlayerResolver(jda, kcClient, twClient)
@@ -38,7 +32,7 @@ class WhoisCommand(
             return
         }
 
-        displayWhois(event, KeycloakPlayer.from(identities))
+        sanctionButtonHandler.sendRecordsPlayerUUID(event, KeycloakPlayer.from(identities).mcUuid)
     }
 
     override fun onSlashCommandInteractionAfterPermission(event: SlashCommandInteractionEvent) {
@@ -55,32 +49,12 @@ class WhoisCommand(
             1 -> {
                 val option = providedOptions.first()
                 val kPlayer = keycloakPlayerResolver.resolve(event, option.name, option.asString) ?: return
-                displayWhois(event, kPlayer)
+                sanctionButtonHandler.sendRecordsPlayerUUID(event, kPlayer.mcUuid)
             }
 
             else -> {
                 event.reply("❌ Please provide exactly one option, not multiple.").setEphemeral(true).queue()
             }
         }
-    }
-
-    private fun displayWhois(event: GenericCommandInteractionEvent, kPlayer: KeycloakPlayer) {
-        val aPlayer = aystonePlayerRepository.getByUuid(kPlayer.mcUuid)
-        if (aPlayer == null) {
-            event.reply("❌ Aystone Player not found. The player may have never joined the server.").setEphemeral(true).queue()
-            return
-        }
-
-        val mcInfo = PlayerDBApi.getByNameOrUuid(aPlayer.uuid.toString()) ?: run {
-            event.reply("❌ Error while fetching Minecraft name for `${aPlayer.uuid}`.").setEphemeral(true).queue()
-            return
-        }
-
-        val embed = EmbedBuilder.buildPlayerInfoEmbed(aPlayer, kPlayer, mcInfo.username)
-        val buttons = sanctionButtonHandler.createSanctionButtons(kPlayer.mcUuid)
-
-        event.replyEmbeds(embed)
-            .setActionRow(*buttons.map { it as ItemComponent }.toTypedArray())
-            .queue()
     }
 }

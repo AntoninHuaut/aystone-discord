@@ -4,6 +4,8 @@ import fr.maner.aystonediscord.api.PlayerDBApi
 import fr.maner.aystonediscord.repository.AystoneSanctionRepository
 import net.dv8tion.jda.api.entities.emoji.Emoji
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent
+import net.dv8tion.jda.api.hooks.ListenerAdapter
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback
 import net.dv8tion.jda.api.interactions.components.ItemComponent
 import net.dv8tion.jda.api.interactions.components.buttons.Button
 import java.util.*
@@ -11,13 +13,40 @@ import java.util.*
 class SanctionButtonHandler(
     private val aystoneSanctionRepository: AystoneSanctionRepository,
     private val rolesId: List<String>
-) {
+) : ListenerAdapter() {
 
     companion object {
         private const val BUTTON_PREFIX_SANCTION_NOTHING = "whois_sanction_nothing"
         private const val BUTTON_PREFIX_SANCTION_ASK = "whois_sanction_ask"
         private const val BUTTON_PREFIX_SANCTION_SEE = "whois_sanction_see"
         private const val MINOTAR_URL = "https://minotar.net/avatar"
+    }
+
+    override fun onButtonInteraction(event: ButtonInteractionEvent) {
+        val componentId = event.componentId
+
+        when {
+            componentId.startsWith(BUTTON_PREFIX_SANCTION_SEE) -> {
+                PaginatedEmbed.handleUpdatePaginationAndPermission(event, BUTTON_PREFIX_SANCTION_SEE, rolesId)
+                return
+            }
+
+            componentId.startsWith(BUTTON_PREFIX_SANCTION_ASK) -> {
+                if (!CommandPermission.hasPermission(event, event.member, rolesId)) {
+                    return
+                }
+
+                val uuidRaw = event.componentId.substringAfter("$BUTTON_PREFIX_SANCTION_ASK:")
+                val uuid = try {
+                    UUID.fromString(uuidRaw)
+                } catch (_: IllegalArgumentException) {
+                    event.reply("❌ Invalid UUID in button interaction.").setEphemeral(true).queue()
+                    return
+                }
+
+                sendRecordsPlayerUUID(event, uuid)
+            }
+        }
     }
 
     fun createSanctionButtons(uuid: UUID): List<Button> {
@@ -43,37 +72,8 @@ class SanctionButtonHandler(
         return buttons
     }
 
-    fun handleButtonInteraction(event: ButtonInteractionEvent): Boolean {
-        val componentId = event.componentId
 
-        return when {
-            componentId.startsWith(BUTTON_PREFIX_SANCTION_SEE) -> {
-                PaginatedEmbed.handleUpdatePaginationAndPermission(event, BUTTON_PREFIX_SANCTION_SEE, rolesId)
-                true
-            }
-
-            componentId.startsWith(BUTTON_PREFIX_SANCTION_ASK) -> {
-                handleSanctionAskButton(event)
-                true
-            }
-
-            else -> false
-        }
-    }
-
-    private fun handleSanctionAskButton(event: ButtonInteractionEvent) {
-        if (!CommandPermission.hasPermission(event, event.member, rolesId)) {
-            return
-        }
-
-        val uuidRaw = event.componentId.substringAfter("$BUTTON_PREFIX_SANCTION_ASK:")
-        val uuid = try {
-            UUID.fromString(uuidRaw)
-        } catch (_: IllegalArgumentException) {
-            event.reply("❌ Invalid UUID in button interaction.").setEphemeral(true).queue()
-            return
-        }
-
+    fun sendRecordsPlayerUUID(event: IReplyCallback, uuid: UUID) {
         val sanctions = aystoneSanctionRepository.getByUuidSortDateDesc(uuid)
         if (sanctions.isEmpty()) {
             event.reply("❌ No sanctions found.").setEphemeral(true).queue()

@@ -3,10 +3,12 @@ package fr.maner.aystonediscord.command.helper
 import fr.maner.aystonediscord.api.KeycloakAPI
 import fr.maner.aystonediscord.api.PlayerDBApi
 import fr.maner.aystonediscord.api.TwitchAPI
+import fr.maner.aystonediscord.command.AbstractCommand
 import fr.maner.aystonediscord.domain.Identities
 import fr.maner.aystonediscord.domain.model.KeycloakPlayer
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent
+import net.dv8tion.jda.api.interactions.commands.OptionType
 import java.util.*
 
 class KeycloakPlayerResolver(
@@ -14,6 +16,14 @@ class KeycloakPlayerResolver(
     private val kcClient: KeycloakAPI,
     private val twClient: TwitchAPI
 ) {
+
+    companion object {
+        val defaultResolverOptions = listOf(
+            AbstractCommand.Option(Identities.DISCORD.getType(), "Discord id or name", OptionType.STRING),
+            AbstractCommand.Option(Identities.MINECRAFT.getType(), "Minecraft name or uuid", OptionType.STRING),
+            AbstractCommand.Option(Identities.TWITCH.getType(), "Twitch id or name", OptionType.STRING),
+        )
+    }
 
     fun resolve(event: GenericCommandInteractionEvent, optionName: String, optionValue: String): KeycloakPlayer? {
         return when (optionName) {

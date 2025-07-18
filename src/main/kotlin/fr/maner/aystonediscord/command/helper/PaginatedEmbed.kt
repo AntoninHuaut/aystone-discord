@@ -2,8 +2,8 @@ package fr.maner.aystonediscord.command.helper
 
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.entities.MessageEmbed
-import net.dv8tion.jda.api.events.interaction.GenericInteractionCreateEvent
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent
+import net.dv8tion.jda.api.interactions.Interaction
 import net.dv8tion.jda.api.interactions.components.ItemComponent
 import net.dv8tion.jda.api.interactions.components.buttons.Button
 import java.util.concurrent.Executors
@@ -51,7 +51,7 @@ class PaginatedEmbed<T>(
         }
 
         fun <T> handleNewPagination(
-            event: GenericInteractionCreateEvent,
+            event: Interaction,
             btnPrefix: String,
             items: List<T>,
             title: String = "Paginated List",

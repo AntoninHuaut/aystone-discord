@@ -3,8 +3,10 @@ package fr.maner.aystonediscord.boot
 import fr.maner.aystonediscord.api.KeycloakAPI
 import fr.maner.aystonediscord.api.TwitchAPI
 import fr.maner.aystonediscord.command.InstanceCommand
+import fr.maner.aystonediscord.command.RecordCommand
 import fr.maner.aystonediscord.command.WhoisCommand
 import fr.maner.aystonediscord.command.helper.PaginatedEmbed
+import fr.maner.aystonediscord.command.helper.SanctionButtonHandler
 import fr.maner.aystonediscord.domain.BotConfig
 import fr.maner.aystonediscord.repository.AystoneInstanceRepository
 import fr.maner.aystonediscord.repository.AystonePlayerRepository
@@ -20,9 +22,9 @@ class DiscordClient(
     botConfig: BotConfig,
     kcClient: KeycloakAPI,
     twClient: TwitchAPI,
-    private val aystoneInstanceRepository: AystoneInstanceRepository,
-    private val aystonePlayerRepository: AystonePlayerRepository,
-    private val aystoneSanctionRepository: AystoneSanctionRepository,
+    private val aInstanceRepo: AystoneInstanceRepository,
+    private val aPlayerRepo: AystonePlayerRepository,
+    private val aSanctionRepo: AystoneSanctionRepository,
 ) {
 
     private val jdaInstance: JDA = JDABuilder.createDefault(botConfig.token)
@@ -32,8 +34,11 @@ class DiscordClient(
         .setActivity(Activity.playing(botConfig.activity))
         .build()
 
-    private val whoisCmd = WhoisCommand(jdaInstance, kcClient, twClient, aystonePlayerRepository, aystoneSanctionRepository, botConfig.rolesId)
-    private val instanceCmd = InstanceCommand(aystoneInstanceRepository, botConfig.rolesId)
+    private val sanctionButtonHandler = SanctionButtonHandler(aSanctionRepo, botConfig.rolesId)
+    private val whoisCmd =
+        WhoisCommand(jdaInstance, kcClient, aPlayerRepo, sanctionButtonHandler, twClient, aSanctionRepo, botConfig.rolesId)
+    private val recordCmd = RecordCommand(jdaInstance, kcClient, sanctionButtonHandler, twClient, aSanctionRepo, botConfig.rolesId)
+    private val instanceCmd = InstanceCommand(aInstanceRepo, botConfig.rolesId)
 
     init {
         jdaInstance.awaitReady()
@@ -43,12 +48,12 @@ class DiscordClient(
     fun initCommands() {
         jdaInstance.guilds.forEach { guild ->
             guild.updateCommands().addCommands(
-                whoisCmd.createSlashCommand(),
-                whoisCmd.createContextCommand(),
-                instanceCmd.createCommand()
+                *instanceCmd.createCommands().toTypedArray(),
+                *recordCmd.createCommands().toTypedArray(),
+                *whoisCmd.createCommands().toTypedArray(),
             ).queue()
         }
-        jdaInstance.addEventListener(whoisCmd, instanceCmd)
+        jdaInstance.addEventListener(instanceCmd, recordCmd, whoisCmd, sanctionButtonHandler)
     }
 
     fun close() {
