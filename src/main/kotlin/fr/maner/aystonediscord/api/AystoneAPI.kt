@@ -16,8 +16,8 @@ class AystoneAPI(private val ayConfig: AystoneConfig) {
     )
 
     data class UserIdentityResponse<T>(
-        val id: T,
-        val username: String,
+        val id: T?,
+        val username: String?,
     )
 
     companion object {

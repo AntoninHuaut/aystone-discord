@@ -72,7 +72,6 @@ class SanctionButtonHandler(
         return buttons
     }
 
-
     fun sendRecordsPlayerUUID(event: IReplyCallback, uuid: UUID) {
         val sanctions = aystoneSanctionRepository.getByUuidSortDateDesc(uuid)
         if (sanctions.isEmpty()) {
