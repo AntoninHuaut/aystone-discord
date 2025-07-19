@@ -15,12 +15,12 @@ data class AypiPlayer(
     companion object {
         fun from(identities: AystoneAPI.UserIdentitiesResponse): AypiPlayer {
             return AypiPlayer(
-                discordId = identities.discord.userId,
-                discordName = identities.discord.userName,
-                mcUuid = identities.microsoft.userId,
-                mcName = identities.microsoft.userName,
-                twitchId = identities.twitch.userId,
-                twitchName = identities.twitch.userName,
+                discordId = identities.discord.id,
+                discordName = identities.discord.username,
+                mcUuid = identities.microsoft.id,
+                mcName = identities.microsoft.username,
+                twitchId = identities.twitch.id,
+                twitchName = identities.twitch.username,
             )
         }
     }

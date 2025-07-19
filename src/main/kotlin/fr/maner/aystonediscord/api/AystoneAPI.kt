@@ -16,8 +16,8 @@ class AystoneAPI(private val ayConfig: AystoneConfig) {
     )
 
     data class UserIdentityResponse<T>(
-        val userId: T,
-        val userName: String,
+        val id: T,
+        val username: String,
     )
 
     companion object {
@@ -28,8 +28,8 @@ class AystoneAPI(private val ayConfig: AystoneConfig) {
     fun getUserByIdpId(idpSource: String, idpUserId: String): UserIdentitiesResponse? {
         val encodedIdpSource = URLEncoder.encode(idpSource, StandardCharsets.UTF_8)
         val encodedUserId = URLEncoder.encode(idpUserId, StandardCharsets.UTF_8)
-        val params = "idpSource=$encodedIdpSource&userId=$encodedUserId"
-        val url = "${ayConfig.url}/user?$params"
+        val params = "provider=$encodedIdpSource&id=$encodedUserId"
+        val url = "${ayConfig.url}/discord/player-info?$params"
 
         try {
             return gson.fromJson(HttpAPI.get(url, ayConfig.token), UserIdentitiesResponse::class.java)
