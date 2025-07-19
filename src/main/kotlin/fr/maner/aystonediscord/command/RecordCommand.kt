@@ -11,7 +11,7 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent
 
 class RecordCommand(
-    jda: JDA,
+    private val jda: JDA,
     private val kcClient: AystoneAPI,
     private val sanctionButtonHandler: SanctionButtonHandler,
     twClient: TwitchAPI,
@@ -29,7 +29,7 @@ class RecordCommand(
             return
         }
 
-        sanctionButtonHandler.sendRecordsPlayerUUID(event, AypiPlayer.from(identities).mcUuid)
+        sanctionButtonHandler.sendRecordsPlayerUUID(event, AypiPlayer.from(jda, identities).mcUuid)
     }
 
     override fun onSlashCommandInteractionAfterPermission(event: SlashCommandInteractionEvent) {
@@ -39,7 +39,8 @@ class RecordCommand(
 
         when (providedOptions.size) {
             0 -> {
-                event.reply("❌ Please provide exactly one option: ${options.joinToString(", ") { it.description.lowercase() }}.").setEphemeral(true).queue()
+                event.reply("❌ Please provide exactly one option: ${options.joinToString(", ") { it.description.lowercase() }}.")
+                    .setEphemeral(true).queue()
                 return
             }
 

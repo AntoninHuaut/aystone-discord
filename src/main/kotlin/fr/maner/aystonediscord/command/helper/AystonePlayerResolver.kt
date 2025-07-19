@@ -86,7 +86,7 @@ class AystonePlayerResolver(
             return null
         }
 
-        return AypiPlayer.from(identities)
+        return AypiPlayer.from(jda, identities)
     }
 
     private fun String.isOnlyDigits(): Boolean = this.all { it.isDigit() }

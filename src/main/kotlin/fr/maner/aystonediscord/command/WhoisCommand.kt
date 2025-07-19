@@ -16,7 +16,7 @@ import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEven
 import net.dv8tion.jda.api.interactions.components.ItemComponent
 
 class WhoisCommand(
-    jda: JDA,
+    private val jda: JDA,
     private val kcClient: AystoneAPI,
     private val aystonePlayerRepository: AystonePlayerRepository,
     private val sanctionButtonHandler: SanctionButtonHandler,
@@ -35,7 +35,7 @@ class WhoisCommand(
             return
         }
 
-        displayWhois(event, AypiPlayer.from(identities))
+        displayWhois(event, AypiPlayer.from(jda, identities))
     }
 
     override fun onSlashCommandInteractionAfterPermission(event: SlashCommandInteractionEvent) {
@@ -45,7 +45,8 @@ class WhoisCommand(
 
         when (providedOptions.size) {
             0 -> {
-                event.reply("❌ Please provide exactly one option: ${options.joinToString(", ") { it.description.lowercase() }}.").setEphemeral(true).queue()
+                event.reply("❌ Please provide exactly one option: ${options.joinToString(", ") { it.description.lowercase() }}.")
+                    .setEphemeral(true).queue()
                 return
             }
 
@@ -64,7 +65,8 @@ class WhoisCommand(
     private fun displayWhois(event: GenericCommandInteractionEvent, kPlayer: AypiPlayer) {
         val aPlayer = aystonePlayerRepository.getByUuid(kPlayer.mcUuid)
         if (aPlayer == null) {
-            event.reply("❌ Aystone Player not found. The player may have never joined the server.").setEphemeral(true).queue()
+            event.reply("❌ Aystone Player not found. The player may have never joined the server.").setEphemeral(true)
+                .queue()
             return
         }
 

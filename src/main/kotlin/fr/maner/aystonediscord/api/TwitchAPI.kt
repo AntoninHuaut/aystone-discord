@@ -81,6 +81,9 @@ class TwitchAPI(private val twConfig: TwitchConfig) {
             }
         }
 
-        return HttpAPI.get(url, authResponse?.accessToken, mapOf("Client-ID" to twConfig.clientId))
+        return HttpAPI.get(
+            url,
+            mapOf("Client-ID" to twConfig.clientId, "Authorization" to "Bearer ${authResponse?.accessToken}")
+        )
     }
 }
