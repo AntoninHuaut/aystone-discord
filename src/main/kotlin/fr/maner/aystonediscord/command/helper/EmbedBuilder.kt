@@ -52,7 +52,7 @@ object EmbedBuilder {
         return embed.addField(
             instance.name,
             listOf(
-                "Max players: ${instance.maxPlayer}",
+                "${instance.numberRegisteredPlayers}/${instance.maxPlayer} players",
                 if (instance.enabled) "✅ Enabled" else "❌ Disabled",
                 if (instance.visible) "✅ Visible" else "❌ Invisible",
             ).joinToString("\n"),

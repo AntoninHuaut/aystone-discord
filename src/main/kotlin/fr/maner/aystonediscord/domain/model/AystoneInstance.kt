@@ -37,7 +37,8 @@ data class AystoneInstance(
     val ipAddress: String,
     val port: Int,
     val enabled: Boolean,
-    val cnfApplied: Boolean
+    val cnfApplied: Boolean,
+    val numberRegisteredPlayers: Int,
 ) {
     companion object {
         fun fromEntity(entity: AystoneInstanceEntity): AystoneInstance {
@@ -48,7 +49,8 @@ data class AystoneInstance(
                 ipAddress = entity.ipAddress,
                 port = entity.port,
                 enabled = entity.enabled,
-                cnfApplied = entity.cnfApplied
+                cnfApplied = entity.cnfApplied,
+                numberRegisteredPlayers = 0,
             )
         }
     }
