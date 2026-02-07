@@ -1,18 +1,19 @@
-.gradle
-build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
 
-### IntelliJ IDEA ###
+# IDE
 .idea/
-*.iws
-*.iml
-*.ipr
-out/
-!**/src/main/**/out/
+.vscode/
+*.swp
+*.swo
+*~
 
-### Kotlin ###
-.kotlin
-
-### CUSTOM
+# Config
 config.yaml

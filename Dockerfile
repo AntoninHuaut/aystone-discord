@@ -1,23 +1,29 @@
-FROM gradle:8-jdk21 AS build
+FROM golang:1.25-alpine AS build
 WORKDIR /app
 
-COPY build.gradle.kts gradle.properties settings.gradle.kts ./
-COPY gradle/ gradle/
+RUN apk add --no-cache git
 
-RUN gradle dependencies --no-daemon
-COPY src/ src/
-RUN gradle shadowJar --no-daemon
+COPY go.mod go.sum ./
+RUN go mod download
 
-FROM eclipse-temurin:21-jre-alpine
+COPY . .
+
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags="-w -s" -o aystone-discord .
+
+FROM alpine:3.23
 WORKDIR /app
 
-RUN addgroup -S aystonediscord && adduser -S aystonediscord -G aystonediscord
+RUN apk add --no-cache ca-certificates tzdata && \
+    addgroup -S aystonediscord && \
+    adduser -S aystonediscord -G aystonediscord
 
-COPY --from=build /app/build/libs/* ./bot.jar
-RUN apk add --no-cache tzdata
+COPY --from=build /app/aystone-discord ./aystone-discord
+
 RUN chown -R aystonediscord:aystonediscord /app
 
 USER aystonediscord
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 CMD pgrep java || exit 1
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 CMD java -cp bot.jar fr.maner.aystonediscord || exit 1
-ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "bot.jar"]
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD pgrep aystone-discord || exit 1
+
+ENTRYPOINT ["./aystone-discord"]
