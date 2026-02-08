@@ -24,19 +24,33 @@ func (b *Bot) handleRecord(s *discordgo.Session, i *discordgo.InteractionCreate)
 	options := data.Options
 
 	var optionName, optionValue string
+	optionCount := 0
 	for _, opt := range options {
 		if opt.StringValue() != "" {
-			optionName = opt.Name
-			optionValue = opt.StringValue()
-			break
+			optionCount++
+			if optionCount == 1 {
+				optionName = opt.Name
+				optionValue = opt.StringValue()
+			}
 		}
 	}
 
-	if optionValue == "" {
+	if optionCount == 0 {
 		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: "❌ Please provide exactly one option: discord, microsoft, or twitch.",
+				Flags:   discordgo.MessageFlagsEphemeral,
+			},
+		})
+		return
+	}
+
+	if optionCount > 1 {
+		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "❌ Please provide exactly one option, not multiple.",
 				Flags:   discordgo.MessageFlagsEphemeral,
 			},
 		})
@@ -76,7 +90,7 @@ func (b *Bot) handleRecord(s *discordgo.Session, i *discordgo.InteractionCreate)
 		return
 	}
 
-	b.sanctionHandler.SendRecords(s, i, aypiPlayer.McUUID)
+	b.sanctionHandler.SendRecords(s, i, aypiPlayer.McUUID, b.ctx)
 }
 
 func (b *Bot) handleRecordContext(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -107,5 +121,5 @@ func (b *Bot) handleRecordContext(s *discordgo.Session, i *discordgo.Interaction
 		return
 	}
 
-	b.sanctionHandler.SendRecords(s, i, aypiPlayer.McUUID)
+	b.sanctionHandler.SendRecords(s, i, aypiPlayer.McUUID, b.ctx)
 }

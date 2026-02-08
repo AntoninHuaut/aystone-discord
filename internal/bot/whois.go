@@ -1,7 +1,6 @@
 package bot
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 
@@ -26,19 +25,33 @@ func (b *Bot) handleWhois(s *discordgo.Session, i *discordgo.InteractionCreate) 
 	options := data.Options
 
 	var optionName, optionValue string
+	optionCount := 0
 	for _, opt := range options {
 		if opt.StringValue() != "" {
-			optionName = opt.Name
-			optionValue = opt.StringValue()
-			break
+			optionCount++
+			if optionCount == 1 {
+				optionName = opt.Name
+				optionValue = opt.StringValue()
+			}
 		}
 	}
 
-	if optionValue == "" {
+	if optionCount == 0 {
 		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: "❌ Please provide exactly one option: discord, microsoft, or twitch.",
+				Flags:   discordgo.MessageFlagsEphemeral,
+			},
+		})
+		return
+	}
+
+	if optionCount > 1 {
+		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "❌ Please provide exactly one option, not multiple.",
 				Flags:   discordgo.MessageFlagsEphemeral,
 			},
 		})
@@ -113,9 +126,7 @@ func (b *Bot) handleWhoisContext(s *discordgo.Session, i *discordgo.InteractionC
 }
 
 func (b *Bot) displayWhois(s *discordgo.Session, i *discordgo.InteractionCreate, aypiPlayer *model.AypiPlayer) {
-	ctx := context.Background()
-
-	player, err := b.playerRepo.GetByUUID(ctx, aypiPlayer.McUUID)
+	player, err := b.playerRepo.GetByUUID(b.ctx, aypiPlayer.McUUID)
 	if err != nil || player == nil {
 		slog.Error("Failed to fetch player from database", "error", err)
 		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -136,7 +147,7 @@ func (b *Bot) displayWhois(s *discordgo.Session, i *discordgo.InteractionCreate,
 
 	embed := BuildPlayerInfoEmbed(player, aypiPlayer, mcName)
 
-	buttons := b.sanctionHandler.CreateSanctionButtons(ctx, player.UUID)
+	buttons := b.sanctionHandler.CreateSanctionButtons(b.ctx, player.UUID)
 
 	_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,

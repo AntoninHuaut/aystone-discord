@@ -170,9 +170,15 @@ func (b *Bot) registerCommands(guildID string) {
 
 func (b *Bot) onInteractionCreate(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	if i.Type == discordgo.InteractionMessageComponent {
-		if b.sanctionHandler.HandleButton(s, i) {
+		if b.sanctionHandler.HandleButton(s, i, b.ctx) {
 			return
 		}
+
+		if HandlePaginationButton(s, i, "instance_list", b.config.RolesID) {
+			return
+		}
+
+		slog.Warn("Unhandled button interaction", "customID", i.MessageComponentData().CustomID)
 		return
 	}
 

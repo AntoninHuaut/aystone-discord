@@ -64,7 +64,7 @@ func (h *SanctionHandler) CreateSanctionButtons(ctx context.Context, uuid uuid.U
 	return buttons
 }
 
-func (h *SanctionHandler) HandleButton(s *discordgo.Session, i *discordgo.InteractionCreate) bool {
+func (h *SanctionHandler) HandleButton(s *discordgo.Session, i *discordgo.InteractionCreate, ctx context.Context) bool {
 	if i.Type != discordgo.InteractionMessageComponent {
 		return false
 	}
@@ -101,14 +101,14 @@ func (h *SanctionHandler) HandleButton(s *discordgo.Session, i *discordgo.Intera
 			return true
 		}
 
-		h.SendRecords(s, i, playerUUID)
+		h.SendRecords(s, i, playerUUID, ctx)
 		return true
 	}
 
 	return false
 }
 
-func (h *SanctionHandler) SendRecords(s *discordgo.Session, i *discordgo.InteractionCreate, playerUUID uuid.UUID) {
+func (h *SanctionHandler) SendRecords(s *discordgo.Session, i *discordgo.InteractionCreate, playerUUID uuid.UUID, ctx context.Context) {
 	if i.Member == nil {
 		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -119,8 +119,6 @@ func (h *SanctionHandler) SendRecords(s *discordgo.Session, i *discordgo.Interac
 		})
 		return
 	}
-
-	ctx := context.Background()
 
 	sanctions, err := h.sanctionRepo.GetByUUIDSortDateDesc(ctx, playerUUID)
 	if err != nil {
