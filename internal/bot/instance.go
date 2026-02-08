@@ -1,7 +1,6 @@
 package bot
 
 import (
-	"context"
 	"log/slog"
 
 	"github.com/bwmarrin/discordgo"
@@ -64,9 +63,7 @@ func (b *Bot) handleInstanceList(s *discordgo.Session, i *discordgo.InteractionC
 		return
 	}
 
-	ctx := context.Background()
-
-	instances, err := b.instanceRepo.GetAll(ctx)
+	instances, err := b.instanceRepo.GetAll(b.ctx)
 	if err != nil {
 		slog.Error("Failed to fetch instances", "error", err)
 		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{

@@ -127,8 +127,19 @@ func (b *Bot) handleWhoisContext(s *discordgo.Session, i *discordgo.InteractionC
 
 func (b *Bot) displayWhois(s *discordgo.Session, i *discordgo.InteractionCreate, aypiPlayer *model.AypiPlayer) {
 	player, err := b.playerRepo.GetByUUID(b.ctx, aypiPlayer.McUUID)
-	if err != nil || player == nil {
-		slog.Error("Failed to fetch player from database", "error", err)
+	if err != nil {
+		slog.Error("Failed to fetch player from database", "error", err, "uuid", aypiPlayer.McUUID)
+		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "❌ Database error while fetching player information.",
+				Flags:   discordgo.MessageFlagsEphemeral,
+			},
+		})
+		return
+	}
+
+	if player == nil {
 		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{

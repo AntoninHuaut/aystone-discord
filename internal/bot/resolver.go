@@ -63,14 +63,22 @@ func (r *PlayerResolver) findUserByName(s *discordgo.Session, name string) strin
 		}
 	}
 
-	slog.Warn("Discord user not found by name", "name", name)
 	return name
 }
 
 func (r *PlayerResolver) ResolveFromMicrosoft(s *discordgo.Session, input string) (*model.AypiPlayer, error) {
 	mcUUID := input
-	playerInfo, err := api.GetByNameOrUUID(input)
-	if err == nil && playerInfo != nil {
+	_, err := uuid.Parse(input)
+	isUUID := err == nil
+
+	if !isUUID {
+		playerInfo, err := api.GetByNameOrUUID(input)
+		if err != nil {
+			return nil, fmt.Errorf("failed to resolve Minecraft username '%s': %w", input, err)
+		}
+		if playerInfo == nil {
+			return nil, fmt.Errorf("minecraft player '%s' not found", input)
+		}
 		mcUUID = playerInfo.ID
 	}
 
