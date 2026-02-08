@@ -29,23 +29,42 @@ func NewPlayerResolver(aystoneAPI *api.AystoneAPI, twitchAPI *api.TwitchAPI) *Pl
 	}
 }
 
+func (r *PlayerResolver) OnGuildMembersChunk(s *discordgo.Session, event *discordgo.GuildMembersChunk) {
+	slog.Info("Guild members loaded", "guild", event.GuildID, "members", len(event.Members), "chunkIndex", event.ChunkIndex, "chunkCount", event.ChunkCount)
+}
+
 func (r *PlayerResolver) ResolveFromDiscord(s *discordgo.Session, input string) (*model.AypiPlayer, error) {
 	userID := input
 	if !isNumeric(input) {
-		if len(s.State.Guilds) > 0 {
-			guild := s.State.Guilds[0]
-			if guild != nil {
-				for _, member := range guild.Members {
-					if strings.EqualFold(member.User.Username, input) || strings.EqualFold(member.User.GlobalName, input) {
-						userID = member.User.ID
-						break
-					}
-				}
+		userID = r.findUserByName(s, input)
+	}
+
+	return r.resolveByIdentity(s, IdentityDiscord, userID)
+}
+
+func (r *PlayerResolver) findUserByName(s *discordgo.Session, name string) string {
+	s.State.RLock()
+	defer s.State.RUnlock()
+
+	for _, guild := range s.State.Guilds {
+		if guild == nil {
+			continue
+		}
+
+		for _, member := range guild.Members {
+			if member.User == nil {
+				continue
+			}
+
+			if strings.EqualFold(member.User.Username, name) ||
+				(member.User.GlobalName != "" && strings.EqualFold(member.User.GlobalName, name)) {
+				return member.User.ID
 			}
 		}
 	}
 
-	return r.resolveByIdentity(s, IdentityDiscord, userID)
+	slog.Warn("Discord user not found by name", "name", name)
+	return name
 }
 
 func (r *PlayerResolver) ResolveFromMicrosoft(s *discordgo.Session, input string) (*model.AypiPlayer, error) {

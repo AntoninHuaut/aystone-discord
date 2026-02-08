@@ -41,6 +41,7 @@ func NewBot(ctx context.Context, cfg config.BotConfig, aystoneAPI *api.AystoneAP
 
 	session.AddHandler(bot.onReady)
 	session.AddHandler(bot.onInteractionCreate)
+	session.AddHandler(bot.resolver.OnGuildMembersChunk)
 
 	StartPaginationCleanup(ctx)
 
@@ -73,6 +74,13 @@ func (b *Bot) onReady(s *discordgo.Session, r *discordgo.Ready) {
 
 	for _, guild := range r.Guilds {
 		b.registerCommands(guild.ID)
+
+		err := s.RequestGuildMembers(guild.ID, "", 0, "", false)
+		if err != nil {
+			slog.Error("Failed to request guild members", "guild", guild.ID, "error", err)
+		} else {
+			slog.Info("Requested guild members for caching", "guild", guild.ID)
+		}
 	}
 }
 
