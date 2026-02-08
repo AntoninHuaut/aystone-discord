@@ -91,6 +91,13 @@ func (h *SanctionHandler) HandleButton(s *discordgo.Session, i *discordgo.Intera
 		playerUUID, err := uuid.Parse(uuidStr)
 		if err != nil {
 			slog.Error("Invalid UUID in button", "uuid", uuidStr, "error", err)
+			_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Content: "❌ Unable to process this action. Please try again.",
+					Flags:   discordgo.MessageFlagsEphemeral,
+				},
+			})
 			return true
 		}
 

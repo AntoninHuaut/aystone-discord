@@ -17,7 +17,7 @@ type DB struct {
 
 func Connect(ctx context.Context, cfg config.DatabaseConfig) (*DB, error) {
 	connStr := fmt.Sprintf(
-		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable search_path=%s",
+		"host=%s port=%s user=%s password=%s dbname=%s search_path=%s",
 		cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.Name, cfg.Schema,
 	)
 

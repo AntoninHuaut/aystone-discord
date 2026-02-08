@@ -158,14 +158,14 @@ func (b *Bot) registerCommands(guildID string) {
 		},
 	}
 
-	for _, cmd := range append(commands, userCommands...) {
-		_, err := b.session.ApplicationCommandCreate(b.session.State.User.ID, guildID, cmd)
-		if err != nil {
-			slog.Error("Failed to register command", "command", cmd.Name, "error", err)
-		}
+	allCommands := append(commands, userCommands...)
+	_, err := b.session.ApplicationCommandBulkOverwrite(b.session.State.User.ID, guildID, allCommands)
+	if err != nil {
+		slog.Error("Failed to register commands", "guild", guildID, "error", err)
+		return
 	}
 
-	slog.Info("Registered commands", "guild", guildID, "count", len(commands)+len(userCommands))
+	slog.Info("Registered commands", "guild", guildID, "count", len(allCommands))
 }
 
 func (b *Bot) onInteractionCreate(s *discordgo.Session, i *discordgo.InteractionCreate) {
