@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/antoninhuaut/aystone-discord/internal/api"
 	"github.com/antoninhuaut/aystone-discord/internal/repository"
@@ -75,22 +76,16 @@ func (h *SanctionHandler) HandleButton(s *discordgo.Session, i *discordgo.Intera
 		return true
 	}
 
-	if len(customID) > len(sanctionButtonAsk) && customID[:len(sanctionButtonAsk)] == sanctionButtonAsk {
+	if strings.HasPrefix(customID, sanctionButtonAsk+":") {
 		if !HasPermission(i, h.rolesID) {
 			RespondError(s, i, "❌ You do not have permission to use this command.")
 			return true
 		}
 
-		uuidStr := customID[len(sanctionButtonAsk)+1:]
-		if len(uuidStr) != 36 {
-			slog.Error("Invalid UUID length in button", "uuid", uuidStr, "length", len(uuidStr))
-			RespondError(s, i, "❌ Unable to process this action. Please try again.")
-			return true
-		}
-
+		uuidStr := strings.TrimPrefix(customID, sanctionButtonAsk+":")
 		playerUUID, err := uuid.Parse(uuidStr)
 		if err != nil {
-			slog.Error("Invalid UUID format in button", "uuid", uuidStr, "error", err)
+			slog.Error("Invalid UUID format in button", "customID", customID, "uuid", uuidStr, "error", err)
 			RespondError(s, i, "❌ Unable to process this action. Please try again.")
 			return true
 		}

@@ -24,6 +24,6 @@ RUN chown -R aystonediscord:aystonediscord /app
 USER aystonediscord
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD pgrep aystone-discord || exit 1
+    CMD pidof aystone-discord || exit 1
 
 ENTRYPOINT ["./aystone-discord"]
