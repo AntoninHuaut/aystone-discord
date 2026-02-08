@@ -172,13 +172,16 @@ func HandlePaginationButton(s *discordgo.Session, i *discordgo.InteractionCreate
 	}
 
 	if !HasPermission(i, rolesID) {
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: "❌ You do not have permission to use this command.",
 				Flags:   discordgo.MessageFlagsEphemeral,
 			},
 		})
+		if err != nil {
+			slog.Warn("Failed to send permission error in pagination", "error", err)
+		}
 		return true
 	}
 
@@ -194,13 +197,16 @@ func HandlePaginationButton(s *discordgo.Session, i *discordgo.InteractionCreate
 	paginator, exists := activePaginators[key]
 	if !exists {
 		paginatorMu.Unlock()
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: "❌ This pagination session has expired. Please run the command again.",
 				Flags:   discordgo.MessageFlagsEphemeral,
 			},
 		})
+		if err != nil {
+			slog.Warn("Failed to send expired pagination error", "error", err)
+		}
 		return true
 	}
 
@@ -216,9 +222,12 @@ func HandlePaginationButton(s *discordgo.Session, i *discordgo.InteractionCreate
 		newPage = paginator.TotalPages - 1
 	case "info":
 		paginatorMu.Unlock()
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseDeferredMessageUpdate,
 		})
+		if err != nil {
+			slog.Warn("Failed to send pagination info deferred update", "error", err)
+		}
 		return true
 	default:
 		paginatorMu.Unlock()
@@ -230,7 +239,7 @@ func HandlePaginationButton(s *discordgo.Session, i *discordgo.InteractionCreate
 	buttons := buildPaginationButtons(key, prefix, newPage, paginator.TotalPages)
 	paginatorMu.Unlock()
 
-	_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseUpdateMessage,
 		Data: &discordgo.InteractionResponseData{
 			Embeds: []*discordgo.MessageEmbed{embed},
@@ -239,6 +248,9 @@ func HandlePaginationButton(s *discordgo.Session, i *discordgo.InteractionCreate
 			},
 		},
 	})
+	if err != nil {
+		slog.Warn("Failed to update pagination message", "error", err)
+	}
 
 	return true
 }

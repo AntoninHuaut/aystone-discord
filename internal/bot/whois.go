@@ -10,84 +10,21 @@ import (
 )
 
 func (b *Bot) handleWhois(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	if !HasPermission(i, b.config.RolesID) {
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "❌ You do not have permission to use this command.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
+	if !CheckPermission(s, i, b.config.RolesID) {
 		return
 	}
 
 	data := i.ApplicationCommandData()
-	options := data.Options
-
-	var optionName, optionValue string
-	optionCount := 0
-	for _, opt := range options {
-		if opt.StringValue() != "" {
-			optionCount++
-			if optionCount == 1 {
-				optionName = opt.Name
-				optionValue = opt.StringValue()
-			}
-		}
-	}
-
-	if optionCount == 0 {
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "❌ Please provide exactly one option: discord, microsoft, or twitch.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
-		return
-	}
-
-	if optionCount > 1 {
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "❌ Please provide exactly one option, not multiple.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
-		return
-	}
-
-	var aypiPlayer *model.AypiPlayer
-	var err error
-
-	switch optionName {
-	case IdentityDiscord:
-		aypiPlayer, err = b.resolver.ResolveFromDiscord(s, optionValue)
-	case IdentityMicrosoft:
-		aypiPlayer, err = b.resolver.ResolveFromMicrosoft(s, optionValue)
-	case IdentityTwitch:
-		aypiPlayer, err = b.resolver.ResolveFromTwitch(s, optionValue)
-	default:
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "❌ Invalid option provided.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
-		return
-	}
-
+	optionName, optionValue, err := ParseSingleOption(data.Options)
 	if err != nil {
-		slog.Error("Failed to resolve player", "error", err)
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: fmt.Sprintf("❌ Error while resolving player: %v", err),
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
+		RespondError(s, i, "❌ "+err.Error())
+		return
+	}
+
+	aypiPlayer, err := b.ResolvePlayerByIdentity(s, optionName, optionValue)
+	if err != nil {
+		slog.Error("Failed to resolve player", "error", err, "identity", optionName, "value", optionValue)
+		RespondError(s, i, fmt.Sprintf("❌ Error while resolving player: %v", err))
 		return
 	}
 
@@ -95,14 +32,7 @@ func (b *Bot) handleWhois(s *discordgo.Session, i *discordgo.InteractionCreate) 
 }
 
 func (b *Bot) handleWhoisContext(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	if !HasPermission(i, b.config.RolesID) {
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "❌ You do not have permission to use this command.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
+	if !CheckPermission(s, i, b.config.RolesID) {
 		return
 	}
 
@@ -111,14 +41,8 @@ func (b *Bot) handleWhoisContext(s *discordgo.Session, i *discordgo.InteractionC
 
 	aypiPlayer, err := b.resolver.ResolveFromDiscord(s, targetUser)
 	if err != nil {
-		slog.Error("Failed to resolve player from context", "error", err)
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "❌ No AypiPlayer found for this user.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
+		slog.Error("Failed to resolve player from context", "error", err, "targetUser", targetUser)
+		RespondError(s, i, "❌ No AypiPlayer found for this user.")
 		return
 	}
 
@@ -129,24 +53,13 @@ func (b *Bot) displayWhois(s *discordgo.Session, i *discordgo.InteractionCreate,
 	player, err := b.playerRepo.GetByUUID(b.ctx, aypiPlayer.McUUID)
 	if err != nil {
 		slog.Error("Failed to fetch player from database", "error", err, "uuid", aypiPlayer.McUUID)
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "❌ Database error while fetching player information.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
+		RespondError(s, i, "❌ Database error while fetching player information.")
 		return
 	}
 
 	if player == nil {
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "❌ Aystone Player not found. The player may have never joined the server.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
+		slog.Info("Player not found in database", "uuid", aypiPlayer.McUUID)
+		RespondError(s, i, "❌ Aystone Player not found. The player may have never joined the server.")
 		return
 	}
 
@@ -160,7 +73,7 @@ func (b *Bot) displayWhois(s *discordgo.Session, i *discordgo.InteractionCreate,
 
 	buttons := b.sanctionHandler.CreateSanctionButtons(b.ctx, player.UUID)
 
-	_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Embeds: []*discordgo.MessageEmbed{embed},
@@ -169,4 +82,7 @@ func (b *Bot) displayWhois(s *discordgo.Session, i *discordgo.InteractionCreate,
 			},
 		},
 	})
+	if err != nil {
+		slog.Warn("Failed to send whois response", "error", err)
+	}
 }

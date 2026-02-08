@@ -77,27 +77,21 @@ func (h *SanctionHandler) HandleButton(s *discordgo.Session, i *discordgo.Intera
 
 	if len(customID) > len(sanctionButtonAsk) && customID[:len(sanctionButtonAsk)] == sanctionButtonAsk {
 		if !HasPermission(i, h.rolesID) {
-			_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{
-					Content: "❌ You do not have permission to use this command.",
-					Flags:   discordgo.MessageFlagsEphemeral,
-				},
-			})
+			RespondError(s, i, "❌ You do not have permission to use this command.")
 			return true
 		}
 
 		uuidStr := customID[len(sanctionButtonAsk)+1:]
+		if len(uuidStr) != 36 {
+			slog.Error("Invalid UUID length in button", "uuid", uuidStr, "length", len(uuidStr))
+			RespondError(s, i, "❌ Unable to process this action. Please try again.")
+			return true
+		}
+
 		playerUUID, err := uuid.Parse(uuidStr)
 		if err != nil {
-			slog.Error("Invalid UUID in button", "uuid", uuidStr, "error", err)
-			_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{
-					Content: "❌ Unable to process this action. Please try again.",
-					Flags:   discordgo.MessageFlagsEphemeral,
-				},
-			})
+			slog.Error("Invalid UUID format in button", "uuid", uuidStr, "error", err)
+			RespondError(s, i, "❌ Unable to process this action. Please try again.")
 			return true
 		}
 
@@ -110,37 +104,19 @@ func (h *SanctionHandler) HandleButton(s *discordgo.Session, i *discordgo.Intera
 
 func (h *SanctionHandler) SendRecords(s *discordgo.Session, i *discordgo.InteractionCreate, playerUUID uuid.UUID, ctx context.Context) {
 	if i.Member == nil {
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "❌ This command can only be used in a server.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
+		RespondError(s, i, "❌ This command can only be used in a server.")
 		return
 	}
 
 	sanctions, err := h.sanctionRepo.GetByUUIDSortDateDesc(ctx, playerUUID)
 	if err != nil {
 		slog.Error("Failed to fetch sanctions", "error", err)
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "❌ Failed to fetch sanctions.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
+		RespondError(s, i, "❌ Failed to fetch sanctions.")
 		return
 	}
 
 	if len(sanctions) == 0 {
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "❌ No sanctions found.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
+		RespondError(s, i, "❌ No sanctions found.")
 		return
 	}
 
@@ -174,11 +150,14 @@ func (h *SanctionHandler) SendRecords(s *discordgo.Session, i *discordgo.Interac
 
 	embed, components := CreatePagination(i.Member.User.ID, i.ID, sanctionButtonSee, len(sanctions), sanctionItemsPerPage, buildPage)
 
-	_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Embeds:     []*discordgo.MessageEmbed{embed},
 			Components: components,
 		},
 	})
+	if err != nil {
+		slog.Warn("Failed to send sanction list response", "error", err)
+	}
 }

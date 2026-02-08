@@ -4,89 +4,25 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/antoninhuaut/aystone-discord/internal/model"
 	"github.com/bwmarrin/discordgo"
 )
 
 func (b *Bot) handleRecord(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	if !HasPermission(i, b.config.RolesID) {
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "❌ You do not have permission to use this command.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
+	if !CheckPermission(s, i, b.config.RolesID) {
 		return
 	}
 
 	data := i.ApplicationCommandData()
-	options := data.Options
-
-	var optionName, optionValue string
-	optionCount := 0
-	for _, opt := range options {
-		if opt.StringValue() != "" {
-			optionCount++
-			if optionCount == 1 {
-				optionName = opt.Name
-				optionValue = opt.StringValue()
-			}
-		}
-	}
-
-	if optionCount == 0 {
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "❌ Please provide exactly one option: discord, microsoft, or twitch.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
-		return
-	}
-
-	if optionCount > 1 {
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "❌ Please provide exactly one option, not multiple.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
-		return
-	}
-
-	var aypiPlayer *model.AypiPlayer
-	var err error
-
-	switch optionName {
-	case IdentityDiscord:
-		aypiPlayer, err = b.resolver.ResolveFromDiscord(s, optionValue)
-	case IdentityMicrosoft:
-		aypiPlayer, err = b.resolver.ResolveFromMicrosoft(s, optionValue)
-	case IdentityTwitch:
-		aypiPlayer, err = b.resolver.ResolveFromTwitch(s, optionValue)
-	default:
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "❌ Invalid option provided.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
-		return
-	}
-
+	optionName, optionValue, err := ParseSingleOption(data.Options)
 	if err != nil {
-		slog.Error("Failed to resolve player", "error", err)
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: fmt.Sprintf("❌ Error while resolving player: %v", err),
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
+		RespondError(s, i, "❌ "+err.Error())
+		return
+	}
+
+	aypiPlayer, err := b.ResolvePlayerByIdentity(s, optionName, optionValue)
+	if err != nil {
+		slog.Error("Failed to resolve player", "error", err, "identity", optionName, "value", optionValue)
+		RespondError(s, i, fmt.Sprintf("❌ Error while resolving player: %v", err))
 		return
 	}
 
@@ -94,14 +30,7 @@ func (b *Bot) handleRecord(s *discordgo.Session, i *discordgo.InteractionCreate)
 }
 
 func (b *Bot) handleRecordContext(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	if !HasPermission(i, b.config.RolesID) {
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "❌ You do not have permission to use this command.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
+	if !CheckPermission(s, i, b.config.RolesID) {
 		return
 	}
 
@@ -110,14 +39,8 @@ func (b *Bot) handleRecordContext(s *discordgo.Session, i *discordgo.Interaction
 
 	aypiPlayer, err := b.resolver.ResolveFromDiscord(s, targetUser)
 	if err != nil {
-		slog.Error("Failed to resolve player from context", "error", err)
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "❌ No AypiPlayer found for this user.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
+		slog.Error("Failed to resolve player from context", "error", err, "targetUser", targetUser)
+		RespondError(s, i, "❌ No AypiPlayer found for this user.")
 		return
 	}
 

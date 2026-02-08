@@ -12,26 +12,13 @@ const (
 )
 
 func (b *Bot) handleInstance(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	if !HasPermission(i, b.config.RolesID) {
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "❌ You do not have permission to use this command.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
+	if !CheckPermission(s, i, b.config.RolesID) {
 		return
 	}
 
 	data := i.ApplicationCommandData()
 	if len(data.Options) == 0 {
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "❌ Please provide a subcommand.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
+		RespondError(s, i, "❌ Please provide a subcommand.")
 		return
 	}
 
@@ -41,49 +28,25 @@ func (b *Bot) handleInstance(s *discordgo.Session, i *discordgo.InteractionCreat
 	case "list":
 		b.handleInstanceList(s, i)
 	default:
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "❌ Unknown subcommand.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
+		RespondError(s, i, "❌ Unknown subcommand.")
 	}
 }
 
 func (b *Bot) handleInstanceList(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	if i.Member == nil {
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "❌ This command can only be used in a server.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
+		RespondError(s, i, "❌ This command can only be used in a server.")
 		return
 	}
 
 	instances, err := b.instanceRepo.GetAll(b.ctx)
 	if err != nil {
 		slog.Error("Failed to fetch instances", "error", err)
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "❌ Failed to fetch instances.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
+		RespondError(s, i, "❌ Failed to fetch instances.")
 		return
 	}
 
 	if len(instances) == 0 {
-		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "❌ No instances found.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
+		RespondError(s, i, "❌ No instances found.")
 		return
 	}
 
@@ -106,11 +69,14 @@ func (b *Bot) handleInstanceList(s *discordgo.Session, i *discordgo.InteractionC
 
 	embed, components := CreatePagination(i.Member.User.ID, i.ID, instanceButtonPrefix, len(instances), itemsPerPage, buildPage)
 
-	_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Embeds:     []*discordgo.MessageEmbed{embed},
 			Components: components,
 		},
 	})
+	if err != nil {
+		slog.Warn("Failed to send instance list response", "error", err)
+	}
 }
