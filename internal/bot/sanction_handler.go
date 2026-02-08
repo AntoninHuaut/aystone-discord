@@ -37,7 +37,7 @@ func (h *SanctionHandler) CreateSanctionButtons(ctx context.Context, uuid uuid.U
 		count = 0
 	}
 
-	buttons := []discordgo.MessageComponent{}
+	var buttons []discordgo.MessageComponent
 
 	if count > 0 {
 		label := fmt.Sprintf("See the %d sanction", count)
@@ -76,7 +76,7 @@ func (h *SanctionHandler) HandleButton(s *discordgo.Session, i *discordgo.Intera
 
 	if len(customID) > len(sanctionButtonAsk) && customID[:len(sanctionButtonAsk)] == sanctionButtonAsk {
 		if !HasPermission(i, h.rolesID) {
-			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: &discordgo.InteractionResponseData{
 					Content: "❌ You do not have permission to use this command.",
@@ -87,13 +87,13 @@ func (h *SanctionHandler) HandleButton(s *discordgo.Session, i *discordgo.Intera
 		}
 
 		uuidStr := customID[len(sanctionButtonAsk)+1:]
-		uuid, err := uuid.Parse(uuidStr)
+		uuidVal, err := uuid.Parse(uuidStr)
 		if err != nil {
-			slog.Error("Invalid UUID in button", "uuid", uuidStr, "error", err)
+			slog.Error("Invalid UUID in button", "uuidVal", uuidStr, "error", err)
 			return true
 		}
 
-		h.SendRecords(s, i, uuid)
+		h.SendRecords(s, i, uuidVal)
 		return true
 	}
 
@@ -106,7 +106,7 @@ func (h *SanctionHandler) SendRecords(s *discordgo.Session, i *discordgo.Interac
 	sanctions, err := h.sanctionRepo.GetByUUIDSortDateDesc(ctx, playerUUID)
 	if err != nil {
 		slog.Error("Failed to fetch sanctions", "error", err)
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: "❌ Failed to fetch sanctions.",
@@ -117,7 +117,7 @@ func (h *SanctionHandler) SendRecords(s *discordgo.Session, i *discordgo.Interac
 	}
 
 	if len(sanctions) == 0 {
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: "❌ No sanctions found.",
@@ -158,7 +158,7 @@ func (h *SanctionHandler) SendRecords(s *discordgo.Session, i *discordgo.Interac
 
 	embed, components := CreatePagination(i.Member.User.ID, i.ID, sanctionButtonSee, len(sanctions), 9, buildPage)
 
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+	_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Embeds:     []*discordgo.MessageEmbed{embed},

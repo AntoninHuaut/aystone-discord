@@ -10,7 +10,7 @@ func HasPermission(i *discordgo.InteractionCreate, rolesID []string) bool {
 		return false
 	}
 
-	perms := i.Interaction.AppPermissions
+	perms := i.Interaction.Member.Permissions
 	if perms&discordgo.PermissionAdministrator != 0 {
 		return true
 	}

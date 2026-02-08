@@ -46,7 +46,9 @@ func LoadConfig() (*AppConfig, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open config.yaml: %w", err)
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		_ = file.Close()
+	}(file)
 
 	var config AppConfig
 	decoder := yaml.NewDecoder(file)

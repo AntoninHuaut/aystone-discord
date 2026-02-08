@@ -12,7 +12,7 @@ import (
 
 func (b *Bot) handleWhois(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	if !HasPermission(i, b.config.RolesID) {
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: "❌ You do not have permission to use this command.",
@@ -36,7 +36,7 @@ func (b *Bot) handleWhois(s *discordgo.Session, i *discordgo.InteractionCreate) 
 	}
 
 	if optionValue == "" {
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: "❌ Please provide exactly one option: discord, minecraft, or twitch.",
@@ -57,7 +57,7 @@ func (b *Bot) handleWhois(s *discordgo.Session, i *discordgo.InteractionCreate) 
 	case IdentityTwitch:
 		aypiPlayer, err = b.resolver.ResolveFromTwitch(s, optionValue)
 	default:
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: "❌ Invalid option provided.",
@@ -69,7 +69,7 @@ func (b *Bot) handleWhois(s *discordgo.Session, i *discordgo.InteractionCreate) 
 
 	if err != nil {
 		slog.Error("Failed to resolve player", "error", err)
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: fmt.Sprintf("❌ Error while resolving player: %v", err),
@@ -84,7 +84,7 @@ func (b *Bot) handleWhois(s *discordgo.Session, i *discordgo.InteractionCreate) 
 
 func (b *Bot) handleWhoisContext(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	if !HasPermission(i, b.config.RolesID) {
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: "❌ You do not have permission to use this command.",
@@ -100,7 +100,7 @@ func (b *Bot) handleWhoisContext(s *discordgo.Session, i *discordgo.InteractionC
 	aypiPlayer, err := b.resolver.ResolveFromDiscord(s, targetUser)
 	if err != nil {
 		slog.Error("Failed to resolve player from context", "error", err)
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: "❌ No AypiPlayer found for this user.",
@@ -119,7 +119,7 @@ func (b *Bot) displayWhois(s *discordgo.Session, i *discordgo.InteractionCreate,
 	player, err := b.playerRepo.GetByUUID(ctx, aypiPlayer.McUUID)
 	if err != nil || player == nil {
 		slog.Error("Failed to fetch player from database", "error", err)
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: "❌ Aystone Player not found. The player may have never joined the server.",
@@ -139,7 +139,7 @@ func (b *Bot) displayWhois(s *discordgo.Session, i *discordgo.InteractionCreate,
 
 	buttons := b.sanctionHandler.CreateSanctionButtons(ctx, player.UUID)
 
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+	_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Embeds: []*discordgo.MessageEmbed{embed},

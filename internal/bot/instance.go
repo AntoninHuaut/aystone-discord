@@ -11,7 +11,7 @@ const instanceButtonPrefix = "instance_list"
 
 func (b *Bot) handleInstance(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	if !HasPermission(i, b.config.RolesID) {
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: "❌ You do not have permission to use this command.",
@@ -23,7 +23,7 @@ func (b *Bot) handleInstance(s *discordgo.Session, i *discordgo.InteractionCreat
 
 	data := i.ApplicationCommandData()
 	if len(data.Options) == 0 {
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: "❌ Please provide a subcommand.",
@@ -39,7 +39,7 @@ func (b *Bot) handleInstance(s *discordgo.Session, i *discordgo.InteractionCreat
 	case "list":
 		b.handleInstanceList(s, i)
 	default:
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: "❌ Unknown subcommand.",
@@ -55,7 +55,7 @@ func (b *Bot) handleInstanceList(s *discordgo.Session, i *discordgo.InteractionC
 	instances, err := b.instanceRepo.GetAll(ctx)
 	if err != nil {
 		slog.Error("Failed to fetch instances", "error", err)
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: "❌ Failed to fetch instances.",
@@ -66,7 +66,7 @@ func (b *Bot) handleInstanceList(s *discordgo.Session, i *discordgo.InteractionC
 	}
 
 	if len(instances) == 0 {
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: "❌ No instances found.",
@@ -96,7 +96,7 @@ func (b *Bot) handleInstanceList(s *discordgo.Session, i *discordgo.InteractionC
 
 	embed, components := CreatePagination(i.Member.User.ID, i.ID, instanceButtonPrefix, len(instances), 9, buildPage)
 
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+	_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Embeds:     []*discordgo.MessageEmbed{embed},

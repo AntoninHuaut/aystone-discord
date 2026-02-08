@@ -74,7 +74,7 @@ func cleanupOldPaginators() {
 	defer paginatorMu.Unlock()
 
 	cutoff := time.Now().Add(-paginatorTimeout)
-	keysToRemove := []string{}
+	var keysToRemove []string
 
 	for key, data := range activePaginators {
 		if data.CreatedAt.Before(cutoff) {
@@ -117,7 +117,7 @@ func CreatePagination(userID, messageID, prefix string, totalItems, itemsPerPage
 }
 
 func buildPaginationButtons(key, prefix string, currentPage, totalPages int) []discordgo.MessageComponent {
-	buttons := []discordgo.MessageComponent{}
+	var buttons []discordgo.MessageComponent
 
 	if totalPages >= additionalButtonsMinPage {
 		buttons = append(buttons, discordgo.Button{
@@ -172,7 +172,7 @@ func HandlePaginationButton(s *discordgo.Session, i *discordgo.InteractionCreate
 	}
 
 	if !HasPermission(i, rolesID) {
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: "❌ You do not have permission to use this command.",
@@ -195,7 +195,7 @@ func HandlePaginationButton(s *discordgo.Session, i *discordgo.InteractionCreate
 	paginatorMu.Unlock()
 
 	if !exists {
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content: "❌ This pagination session has expired. Please run the command again.",
@@ -216,7 +216,7 @@ func HandlePaginationButton(s *discordgo.Session, i *discordgo.InteractionCreate
 	case "last":
 		newPage = paginator.TotalPages - 1
 	case "info":
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseDeferredMessageUpdate,
 		})
 		return true
@@ -231,7 +231,7 @@ func HandlePaginationButton(s *discordgo.Session, i *discordgo.InteractionCreate
 	embed := paginator.BuildPage(newPage)
 	buttons := buildPaginationButtons(key, prefix, newPage, paginator.TotalPages)
 
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+	_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseUpdateMessage,
 		Data: &discordgo.InteractionResponseData{
 			Embeds: []*discordgo.MessageEmbed{embed},
@@ -242,18 +242,4 @@ func HandlePaginationButton(s *discordgo.Session, i *discordgo.InteractionCreate
 	})
 
 	return true
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

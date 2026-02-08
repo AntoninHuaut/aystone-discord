@@ -53,7 +53,7 @@ func (b *Bot) Start() error {
 	}
 
 	if b.config.Activity != "" {
-		b.session.UpdateGameStatus(0, b.config.Activity)
+		_ = b.session.UpdateGameStatus(0, b.config.Activity)
 	}
 
 	slog.Info("Bot is now running")
@@ -63,7 +63,7 @@ func (b *Bot) Start() error {
 func (b *Bot) Stop() {
 	StopPaginationCleanup()
 	if b.session != nil {
-		b.session.Close()
+		_ = b.session.Close()
 	}
 	slog.Info("Bot stopped")
 }

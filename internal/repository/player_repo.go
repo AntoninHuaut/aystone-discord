@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"github.com/antoninhuaut/aystone-discord/internal/database"
 	"github.com/antoninhuaut/aystone-discord/internal/model"
@@ -26,7 +27,7 @@ func (r *PlayerRepository) GetByUUID(ctx context.Context, uuid uuid.UUID) (*mode
 
 	var player model.AystonePlayer
 	if err := r.db.GetContext(ctx, &player, query, uuid); err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
