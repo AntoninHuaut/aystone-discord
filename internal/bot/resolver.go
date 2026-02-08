@@ -13,7 +13,7 @@ import (
 
 const (
 	IdentityDiscord   = "discord"
-	IdentityMinecraft = "microsoft"
+	IdentityMicrosoft = "microsoft"
 	IdentityTwitch    = "twitch"
 )
 
@@ -48,14 +48,14 @@ func (r *PlayerResolver) ResolveFromDiscord(s *discordgo.Session, input string) 
 	return r.resolveByIdentity(s, IdentityDiscord, userID)
 }
 
-func (r *PlayerResolver) ResolveFromMinecraft(s *discordgo.Session, input string) (*model.AypiPlayer, error) {
+func (r *PlayerResolver) ResolveFromMicrosoft(s *discordgo.Session, input string) (*model.AypiPlayer, error) {
 	mcUUID := input
 	playerInfo, err := api.GetByNameOrUUID(input)
 	if err == nil && playerInfo != nil {
 		mcUUID = playerInfo.ID
 	}
 
-	return r.resolveByIdentity(s, IdentityMinecraft, mcUUID)
+	return r.resolveByIdentity(s, IdentityMicrosoft, mcUUID)
 }
 
 func (r *PlayerResolver) ResolveFromTwitch(s *discordgo.Session, input string) (*model.AypiPlayer, error) {

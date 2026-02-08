@@ -36,7 +36,7 @@ func (b *Bot) handleRecord(s *discordgo.Session, i *discordgo.InteractionCreate)
 		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
-				Content: "❌ Please provide exactly one option: discord, minecraft, or twitch.",
+				Content: "❌ Please provide exactly one option: discord, microsoft, or twitch.",
 				Flags:   discordgo.MessageFlagsEphemeral,
 			},
 		})
@@ -49,8 +49,8 @@ func (b *Bot) handleRecord(s *discordgo.Session, i *discordgo.InteractionCreate)
 	switch optionName {
 	case IdentityDiscord:
 		aypiPlayer, err = b.resolver.ResolveFromDiscord(s, optionValue)
-	case IdentityMinecraft:
-		aypiPlayer, err = b.resolver.ResolveFromMinecraft(s, optionValue)
+	case IdentityMicrosoft:
+		aypiPlayer, err = b.resolver.ResolveFromMicrosoft(s, optionValue)
 	case IdentityTwitch:
 		aypiPlayer, err = b.resolver.ResolveFromTwitch(s, optionValue)
 	default:

@@ -90,7 +90,7 @@ func (b *Bot) registerCommands(guildID string) {
 				},
 				{
 					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        IdentityMinecraft,
+					Name:        IdentityMicrosoft,
 					Description: "Minecraft name or uuid",
 					Required:    false,
 				},
@@ -114,7 +114,7 @@ func (b *Bot) registerCommands(guildID string) {
 				},
 				{
 					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        IdentityMinecraft,
+					Name:        IdentityMicrosoft,
 					Description: "Minecraft name or uuid",
 					Required:    false,
 				},
