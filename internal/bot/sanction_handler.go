@@ -16,6 +16,7 @@ const (
 	sanctionButtonAsk     = "whois_sanction_ask"
 	sanctionButtonNothing = "whois_sanction_nothing"
 	sanctionButtonSee     = "whois_sanction_see"
+	sanctionItemsPerPage  = 9
 )
 
 type SanctionHandler struct {
@@ -87,13 +88,13 @@ func (h *SanctionHandler) HandleButton(s *discordgo.Session, i *discordgo.Intera
 		}
 
 		uuidStr := customID[len(sanctionButtonAsk)+1:]
-		uuidVal, err := uuid.Parse(uuidStr)
+		playerUUID, err := uuid.Parse(uuidStr)
 		if err != nil {
-			slog.Error("Invalid UUID in button", "uuidVal", uuidStr, "error", err)
+			slog.Error("Invalid UUID in button", "uuid", uuidStr, "error", err)
 			return true
 		}
 
-		h.SendRecords(s, i, uuidVal)
+		h.SendRecords(s, i, playerUUID)
 		return true
 	}
 
@@ -101,6 +102,17 @@ func (h *SanctionHandler) HandleButton(s *discordgo.Session, i *discordgo.Intera
 }
 
 func (h *SanctionHandler) SendRecords(s *discordgo.Session, i *discordgo.InteractionCreate, playerUUID uuid.UUID) {
+	if i.Member == nil {
+		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "❌ This command can only be used in a server.",
+				Flags:   discordgo.MessageFlagsEphemeral,
+			},
+		})
+		return
+	}
+
 	ctx := context.Background()
 
 	sanctions, err := h.sanctionRepo.GetByUUIDSortDateDesc(ctx, playerUUID)
@@ -134,9 +146,8 @@ func (h *SanctionHandler) SendRecords(s *discordgo.Session, i *discordgo.Interac
 	}
 
 	buildPage := func(page int) *discordgo.MessageEmbed {
-		itemsPerPage := 9
-		start := page * itemsPerPage
-		end := min(start+itemsPerPage, len(sanctions))
+		start := page * sanctionItemsPerPage
+		end := min(start+sanctionItemsPerPage, len(sanctions))
 
 		embed := &discordgo.MessageEmbed{
 			Title:     fmt.Sprintf("⚖️ Sanction List: `%s`", mcName),
@@ -156,7 +167,7 @@ func (h *SanctionHandler) SendRecords(s *discordgo.Session, i *discordgo.Interac
 		return embed
 	}
 
-	embed, components := CreatePagination(i.Member.User.ID, i.ID, sanctionButtonSee, len(sanctions), 9, buildPage)
+	embed, components := CreatePagination(i.Member.User.ID, i.ID, sanctionButtonSee, len(sanctions), sanctionItemsPerPage, buildPage)
 
 	_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,

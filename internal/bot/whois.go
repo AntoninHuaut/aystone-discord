@@ -25,7 +25,6 @@ func (b *Bot) handleWhois(s *discordgo.Session, i *discordgo.InteractionCreate) 
 	data := i.ApplicationCommandData()
 	options := data.Options
 
-	// Find the provided option
 	var optionName, optionValue string
 	for _, opt := range options {
 		if opt.StringValue() != "" {

@@ -6,9 +6,12 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
-var client = &http.Client{}
+var client = &http.Client{
+	Timeout: 30 * time.Second,
+}
 
 func Get(url string, headers map[string]string) (string, error) {
 	req, err := http.NewRequest("GET", url, nil)

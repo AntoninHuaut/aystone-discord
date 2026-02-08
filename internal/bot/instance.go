@@ -7,7 +7,10 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-const instanceButtonPrefix = "instance_list"
+const (
+	instanceButtonPrefix = "instance_list"
+	itemsPerPage         = 9
+)
 
 func (b *Bot) handleInstance(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	if !HasPermission(i, b.config.RolesID) {
@@ -50,6 +53,17 @@ func (b *Bot) handleInstance(s *discordgo.Session, i *discordgo.InteractionCreat
 }
 
 func (b *Bot) handleInstanceList(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	if i.Member == nil {
+		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "❌ This command can only be used in a server.",
+				Flags:   discordgo.MessageFlagsEphemeral,
+			},
+		})
+		return
+	}
+
 	ctx := context.Background()
 
 	instances, err := b.instanceRepo.GetAll(ctx)
@@ -77,7 +91,6 @@ func (b *Bot) handleInstanceList(s *discordgo.Session, i *discordgo.InteractionC
 	}
 
 	buildPage := func(page int) *discordgo.MessageEmbed {
-		itemsPerPage := 9
 		start := page * itemsPerPage
 		end := min(start+itemsPerPage, len(instances))
 
@@ -94,7 +107,7 @@ func (b *Bot) handleInstanceList(s *discordgo.Session, i *discordgo.InteractionC
 		return embed
 	}
 
-	embed, components := CreatePagination(i.Member.User.ID, i.ID, instanceButtonPrefix, len(instances), 9, buildPage)
+	embed, components := CreatePagination(i.Member.User.ID, i.ID, instanceButtonPrefix, len(instances), itemsPerPage, buildPage)
 
 	_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,

@@ -11,6 +11,8 @@ import (
 	"github.com/antoninhuaut/aystone-discord/internal/config"
 )
 
+const tokenRefreshBuffer = 60 * time.Second
+
 type TwitchAPI struct {
 	config   config.TwitchConfig
 	authData *authResponse
@@ -84,7 +86,7 @@ func (t *TwitchAPI) getAuth(targetURL string) (string, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if t.authData == nil || time.Since(t.authData.IssuedAt) >= time.Duration(t.authData.ExpiresIn)*time.Second {
+	if t.authData == nil || time.Since(t.authData.IssuedAt) >= time.Duration(t.authData.ExpiresIn)*time.Second-tokenRefreshBuffer {
 		authResp, err := t.auth()
 		if err != nil {
 			slog.Error("Failed to authenticate with Twitch", "error", err)

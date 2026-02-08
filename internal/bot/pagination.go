@@ -192,9 +192,8 @@ func HandlePaginationButton(s *discordgo.Session, i *discordgo.InteractionCreate
 
 	paginatorMu.Lock()
 	paginator, exists := activePaginators[key]
-	paginatorMu.Unlock()
-
 	if !exists {
+		paginatorMu.Unlock()
 		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
@@ -216,20 +215,20 @@ func HandlePaginationButton(s *discordgo.Session, i *discordgo.InteractionCreate
 	case "last":
 		newPage = paginator.TotalPages - 1
 	case "info":
+		paginatorMu.Unlock()
 		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseDeferredMessageUpdate,
 		})
 		return true
 	default:
+		paginatorMu.Unlock()
 		return false
 	}
 
-	paginatorMu.Lock()
 	paginator.CurrentPage = newPage
-	paginatorMu.Unlock()
-
 	embed := paginator.BuildPage(newPage)
 	buttons := buildPaginationButtons(key, prefix, newPage, paginator.TotalPages)
+	paginatorMu.Unlock()
 
 	_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseUpdateMessage,

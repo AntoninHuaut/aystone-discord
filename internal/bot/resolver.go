@@ -32,12 +32,14 @@ func NewPlayerResolver(aystoneAPI *api.AystoneAPI, twitchAPI *api.TwitchAPI) *Pl
 func (r *PlayerResolver) ResolveFromDiscord(s *discordgo.Session, input string) (*model.AypiPlayer, error) {
 	userID := input
 	if !isNumeric(input) {
-		guild := s.State.Guilds[0]
-		if guild != nil {
-			for _, member := range guild.Members {
-				if strings.EqualFold(member.User.Username, input) || strings.EqualFold(member.User.GlobalName, input) {
-					userID = member.User.ID
-					break
+		if len(s.State.Guilds) > 0 {
+			guild := s.State.Guilds[0]
+			if guild != nil {
+				for _, member := range guild.Members {
+					if strings.EqualFold(member.User.Username, input) || strings.EqualFold(member.User.GlobalName, input) {
+						userID = member.User.ID
+						break
+					}
 				}
 			}
 		}
@@ -131,10 +133,13 @@ func (r *PlayerResolver) buildAypiPlayer(s *discordgo.Session, identities *api.U
 }
 
 func isNumeric(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
 	for _, c := range s {
 		if c < '0' || c > '9' {
 			return false
 		}
 	}
-	return len(s) > 0
+	return true
 }
