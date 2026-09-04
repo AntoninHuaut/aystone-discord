@@ -15,6 +15,10 @@ const (
 	IdentityDiscord   = "discord"
 	IdentityMicrosoft = "microsoft"
 	IdentityTwitch    = "twitch"
+
+	// Discord matches the query as a prefix of username or nickname; a few
+	// candidates are enough to find the exact match below.
+	memberSearchLimit = 10
 )
 
 type PlayerResolver struct {
@@ -29,10 +33,6 @@ func NewPlayerResolver(aystoneAPI *api.AystoneAPI, twitchAPI *api.TwitchAPI) *Pl
 	}
 }
 
-func (r *PlayerResolver) OnGuildMembersChunk(s *discordgo.Session, event *discordgo.GuildMembersChunk) {
-	slog.Info("Guild members loaded", "guild", event.GuildID, "members", len(event.Members), "chunkIndex", event.ChunkIndex, "chunkCount", event.ChunkCount)
-}
-
 func (r *PlayerResolver) ResolveFromDiscord(s *discordgo.Session, input string) (*model.AypiPlayer, error) {
 	userID := input
 	if !isNumeric(input) {
@@ -42,16 +42,26 @@ func (r *PlayerResolver) ResolveFromDiscord(s *discordgo.Session, input string) 
 	return r.resolveByIdentity(s, IdentityDiscord, userID)
 }
 
+// Searches over REST rather than the state cache: without the Members intent
+// the gateway never sends the member list, so the cache stays empty.
 func (r *PlayerResolver) findUserByName(s *discordgo.Session, name string) string {
 	s.State.RLock()
-	defer s.State.RUnlock()
-
+	guildIDs := make([]string, 0, len(s.State.Guilds))
 	for _, guild := range s.State.Guilds {
-		if guild == nil {
+		if guild != nil {
+			guildIDs = append(guildIDs, guild.ID)
+		}
+	}
+	s.State.RUnlock()
+
+	for _, guildID := range guildIDs {
+		members, err := s.GuildMembersSearch(guildID, name, memberSearchLimit)
+		if err != nil {
+			slog.Error("Failed to search guild members", "guild", guildID, "name", name, "error", err)
 			continue
 		}
 
-		for _, member := range guild.Members {
+		for _, member := range members {
 			if member.User == nil {
 				continue
 			}
